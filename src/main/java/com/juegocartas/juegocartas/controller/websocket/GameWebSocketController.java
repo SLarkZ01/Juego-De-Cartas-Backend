@@ -1,15 +1,17 @@
 package com.juegocartas.juegocartas.controller.websocket;
 
+import java.util.HashMap;
+
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Controller;
+
 import com.juegocartas.juegocartas.dto.request.WsActionRequest;
 import com.juegocartas.juegocartas.service.EventPublisher;
 import com.juegocartas.juegocartas.service.GameService;
-import jakarta.validation.Valid;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.stereotype.Controller;
 
-import java.util.HashMap;
+import jakarta.validation.Valid;
 
 @Controller
 public class GameWebSocketController {
