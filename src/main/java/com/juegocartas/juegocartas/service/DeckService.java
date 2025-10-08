@@ -1,9 +1,8 @@
 package com.juegocartas.juegocartas.service;
 
-import com.juegocartas.juegocartas.model.Jugador;
-import com.juegocartas.juegocartas.model.Partida;
-
 import java.util.List;
+
+import com.juegocartas.juegocartas.model.Partida;
 
 public interface DeckService {
     List<String> generarBaraja(List<String> codigosDisponibles);

@@ -1,8 +1,9 @@
 package com.juegocartas.juegocartas.service.impl;
 
-import com.juegocartas.juegocartas.service.EventPublisher;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
+
+import com.juegocartas.juegocartas.service.EventPublisher;
 
 @Component
 public class SimpEventPublisher implements EventPublisher {
