@@ -15,6 +15,14 @@ public class Partida {
     private String codigo;
     private String estado;
     private List<Jugador> jugadores = new ArrayList<>();
+    private List<CartaEnMesa> cartasEnMesa = new ArrayList<>();
+    private String turnoActual;
+    private String atributoSeleccionado;
+    private List<String> cartasAcumuladasEmpate = new ArrayList<>();
+    private List<Ronda> historialRondas = new ArrayList<>();
+    private String ganador;
+    private Instant tiempoInicio;
+    private int tiempoLimite = 1800; // 30 minutos por defecto
     private Instant fechaCreacion = Instant.now();
 
     public Partida() {
@@ -54,6 +62,70 @@ public class Partida {
 
     public void setJugadores(List<Jugador> jugadores) {
         this.jugadores = jugadores;
+    }
+
+    public List<CartaEnMesa> getCartasEnMesa() {
+        return cartasEnMesa;
+    }
+
+    public void setCartasEnMesa(List<CartaEnMesa> cartasEnMesa) {
+        this.cartasEnMesa = cartasEnMesa;
+    }
+
+    public String getTurnoActual() {
+        return turnoActual;
+    }
+
+    public void setTurnoActual(String turnoActual) {
+        this.turnoActual = turnoActual;
+    }
+
+    public String getAtributoSeleccionado() {
+        return atributoSeleccionado;
+    }
+
+    public void setAtributoSeleccionado(String atributoSeleccionado) {
+        this.atributoSeleccionado = atributoSeleccionado;
+    }
+
+    public List<String> getCartasAcumuladasEmpate() {
+        return cartasAcumuladasEmpate;
+    }
+
+    public void setCartasAcumuladasEmpate(List<String> cartasAcumuladasEmpate) {
+        this.cartasAcumuladasEmpate = cartasAcumuladasEmpate;
+    }
+
+    public List<Ronda> getHistorialRondas() {
+        return historialRondas;
+    }
+
+    public void setHistorialRondas(List<Ronda> historialRondas) {
+        this.historialRondas = historialRondas;
+    }
+
+    public String getGanador() {
+        return ganador;
+    }
+
+    public void setGanador(String ganador) {
+        this.ganador = ganador;
+    }
+
+    public Instant getTiempoInicio() {
+        return tiempoInicio;
+    }
+
+    public void setTiempoInicio(Instant tiempoInicio) {
+        this.tiempoInicio = tiempoInicio;
+    }
+
+    public int getTiempoLimite() {
+        return tiempoLimite;
+    }
+
+    public void setTiempoLimite(int tiempoLimite) {
+        this.tiempoLimite = tiempoLimite;
     }
 
     public Instant getFechaCreacion() {
