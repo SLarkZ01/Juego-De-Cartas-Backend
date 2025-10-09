@@ -1,22 +1,22 @@
 package com.juegocartas.juegocartas.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.juegocartas.juegocartas.controller.rest.GameController;
-import com.juegocartas.juegocartas.dto.request.SeleccionarAtributoRequest;
-import com.juegocartas.juegocartas.dto.request.JugarCartaRequest;
-import com.juegocartas.juegocartas.model.Partida;
-import com.juegocartas.juegocartas.service.GameService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.juegocartas.juegocartas.controller.rest.GameController;
+import com.juegocartas.juegocartas.dto.request.JugarCartaRequest;
+import com.juegocartas.juegocartas.dto.request.SeleccionarAtributoRequest;
+import com.juegocartas.juegocartas.model.Partida;
+import com.juegocartas.juegocartas.service.GameService;
 
 public class GameControllerTest {
 
