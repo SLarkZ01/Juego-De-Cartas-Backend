@@ -6,13 +6,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import io.swagger.v3.oas.annotations.Operation;
 
 import com.juegocartas.juegocartas.dto.request.JugarCartaRequest;
 import com.juegocartas.juegocartas.dto.request.SeleccionarAtributoRequest;
 import com.juegocartas.juegocartas.model.Partida;
 import com.juegocartas.juegocartas.service.GameService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 
 @RestController
