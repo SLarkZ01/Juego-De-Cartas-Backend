@@ -6,10 +6,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.juegocartas.juegocartas.dto.request.CrearPartidaRequest;
 import com.juegocartas.juegocartas.dto.request.UnirsePartidaRequest;
+import com.juegocartas.juegocartas.dto.response.PartidaDetailResponse;
 import com.juegocartas.juegocartas.dto.response.PartidaResponse;
 import com.juegocartas.juegocartas.service.PartidaService;
 
@@ -41,5 +43,15 @@ public class PartidaController {
     @Operation(summary = "Obtener partida", description = "Obtiene información de la partida por código.")
     public ResponseEntity<PartidaResponse> obtener(@PathVariable String codigo) {
         return ResponseEntity.ok(partidaService.obtenerPartida(codigo));
+    }
+    
+    @GetMapping("/{codigo}/detalle")
+    @Operation(summary = "Obtener detalle de partida", 
+               description = "Obtiene información detallada de la partida para un jugador específico. " +
+                           "Oculta las cartas en mano de otros jugadores (privacidad).")
+    public ResponseEntity<PartidaDetailResponse> obtenerDetalle(
+            @PathVariable String codigo,
+            @RequestParam String jugadorId) {
+        return ResponseEntity.ok(partidaService.obtenerPartidaDetalle(codigo, jugadorId));
     }
 }

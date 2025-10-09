@@ -10,10 +10,48 @@ import com.juegocartas.juegocartas.model.Jugador;
 import com.juegocartas.juegocartas.model.Partida;
 import com.juegocartas.juegocartas.service.DeckService;
 
+/**
+ * Implementación del servicio de baraja.
+ * 
+ * Principios SOLID:
+ * - Single Responsibility: Solo gestiona operaciones de baraja
+ * - Open/Closed: Configuración de códigos puede extenderse mediante constantes
+ */
 @Service
 public class DeckServiceImpl implements DeckService {
 
+    /**
+     * Configuración de la baraja estándar: 4 paquetes (1-4) con 8 cartas cada uno (A-H).
+     * Para cambiar la estructura de la baraja, modificar estas constantes.
+     */
+    private static final int NUMERO_PAQUETES = 4;
+    private static final char PRIMERA_CARTA = 'A';
+    private static final char ULTIMA_CARTA = 'H';
+    
+    /**
+     * Orden de prioridad para determinar el primer turno.
+     * Se generan dinámicamente basándose en la configuración de la baraja.
+     */
+    private final String[] ordenPrioridad;
+
     public DeckServiceImpl() {
+        this.ordenPrioridad = generarOrdenPrioridad();
+    }
+    
+    /**
+     * Genera el orden de prioridad de cartas dinámicamente.
+     * Ejemplo: 1A, 1B, 1C, ..., 1H, 2A, 2B, ..., 4H
+     */
+    private String[] generarOrdenPrioridad() {
+        List<String> codigos = new ArrayList<>();
+        
+        for (int paquete = 1; paquete <= NUMERO_PAQUETES; paquete++) {
+            for (char letra = PRIMERA_CARTA; letra <= ULTIMA_CARTA; letra++) {
+                codigos.add(String.valueOf(paquete) + letra);
+            }
+        }
+        
+        return codigos.toArray(new String[0]);
     }
 
     @Override
@@ -37,14 +75,27 @@ public class DeckServiceImpl implements DeckService {
 
     @Override
     public String determinarPrimerTurno(Partida partida) {
-        String[] ordenBusqueda = new String[] {"1A","1B","1C","1D","1E","1F","1G","1H",
-                "2A","2B","2C","2D","2E","2F","2G","2H","3A","3B","3C","3D","3E","3F","3G","3H","4A","4B","4C","4D","4E","4F","4G","4H"};
-
-        for (String codigo : ordenBusqueda) {
+        // Usar el orden de prioridad generado dinámicamente
+        for (String codigo : ordenPrioridad) {
             for (Jugador j : partida.getJugadores()) {
-                if (j.getCartasEnMano().contains(codigo)) return j.getId();
+                if (j.getCartasEnMano().contains(codigo)) {
+                    return j.getId();
+                }
             }
         }
-        return partida.getJugadores().get(0).getId();
+        
+        // Fallback: si ninguna carta del orden está presente, el primer jugador
+        return partida.getJugadores().isEmpty() ? null : partida.getJugadores().get(0).getId();
+    }
+    
+    /**
+     * Obtiene la configuración actual de la baraja.
+     * Útil para tests o para mostrar información al usuario.
+     */
+    public String getConfiguracionBaraja() {
+        return String.format("Baraja: %d paquetes, cartas de %c a %c (%d cartas por paquete, %d total)",
+            NUMERO_PAQUETES, PRIMERA_CARTA, ULTIMA_CARTA,
+            (ULTIMA_CARTA - PRIMERA_CARTA + 1),
+            NUMERO_PAQUETES * (ULTIMA_CARTA - PRIMERA_CARTA + 1));
     }
 }
