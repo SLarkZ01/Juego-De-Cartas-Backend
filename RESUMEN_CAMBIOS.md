@@ -36,17 +36,19 @@
    - ✅ Selección de hasta 32 personajes aleatorios
    - ✅ Garantiza variabilidad entre partidas
 
-   **3.4 Mapeo Completo:**
+   **3.4 Mapeo Completo - MEJORADO** ⭐:
+   - ✅ **Método `obtenerDetallesPersonaje(id)` - Nuevo endpoint individual**
+   - ✅ **Llamada GET /characters/{id} por cada personaje seleccionado**
+   - ✅ **Extracción de TODAS las transformaciones con imágenes y ki**
+   - ✅ **Extracción de información COMPLETA del planeta**
    - ✅ Extracción de información básica (nombre, imagen, descripción)
    - ✅ Extracción de características (raza, género, afiliación)
-   - ✅ Mapeo de planeta con toda su información
-   - ✅ Mapeo de transformaciones con imágenes y ki
    - ✅ Preservación de ki original como strings
 
    **3.5 Cálculo de Atributos:**
    - ✅ Poder basado en maxKi normalizado
    - ✅ Ki basado en ki base normalizado
-   - ✅ Transformaciones (cantidad real)
+   - ✅ **Transformaciones (cantidad REAL de transformaciones)** ⭐
    - ✅ Velocidad calculada con bonus por raza:
      - Saiyan, God, Angel: +20%
      - Frieza Race, Namekian: +10%
@@ -54,9 +56,30 @@
      - Majin, Bio-Android: -10%
    - ✅ Defensa como 80% del poder
 
-### 4. **Documentación**
+### 4. **FIX Crítico: Datos Completos por Personaje** ⭐ NUEVO
+
+**Problema Detectado:**
+- La API `/characters` retorna lista resumida SIN transformaciones ni planeta completo
+- Solo `/characters/{id}` retorna datos completos de UN personaje
+
+**Solución Implementada:**
+- ✅ Llamada individual GET `/characters/{id}` para cada personaje seleccionado
+- ✅ Obtención de transformaciones completas (nombre, imagen, ki)
+- ✅ Obtención de planeta completo (nombre, imagen, descripción, isDestroyed)
+- ✅ Descripción completa del personaje
+- ✅ Manejo de errores si falla alguna llamada individual
+
+**Resultado:**
+- **Antes**: `transformaciones: null`, `planeta: null`
+- **Ahora**: Datos completos con todas las transformaciones e info del planeta
+
+Ver: `FIX_PERSONAJES_COMPLETOS.md` para detalles técnicos completos
+
+### 5. **Documentación**
    - ✅ `DRAGON_BALL_IMPROVEMENTS.md` - Documentación técnica completa
    - ✅ `GUIA_USO_DRAGON_BALL.md` - Guía de uso con ejemplos
+   - ✅ `FIX_PERSONAJES_COMPLETOS.md` - Fix de datos completos (NUEVO)
+   - ✅ `verificar_cartas_completas.ps1` - Script de verificación (NUEVO)
    - ✅ `KiNormalizerTest.java` - Tests unitarios
    - ✅ Este archivo de resumen
 

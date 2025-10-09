@@ -78,14 +78,39 @@ public class DragonBallApiServiceImpl implements DragonBallApiService {
 
             log.info("Personajes seleccionados para cartas: {}", cantidadCartas);
 
-            // Mapear personajes a cartas
+            // Obtener detalles completos de cada personaje y mapear a cartas
             List<Carta> cartas = new ArrayList<>();
             for (int i = 0; i < personajesSeleccionados.size(); i++) {
-                Map<String, Object> personaje = personajesSeleccionados.get(i);
-                String codigo = generarCodigo(i);
-                Carta carta = mapearPersonajeACarta(personaje, codigo);
-                cartas.add(carta);
-                log.debug("Carta creada: {} - {}", codigo, carta.getNombre());
+                Map<String, Object> personajeResumido = personajesSeleccionados.get(i);
+                
+                // Obtener ID del personaje
+                Object idObj = personajeResumido.get("id");
+                if (idObj == null) {
+                    log.warn("Personaje sin ID, saltando: {}", personajeResumido.get("name"));
+                    continue;
+                }
+                
+                String personajeId = idObj.toString();
+                
+                // Obtener detalles completos del personaje (con transformaciones, planeta, etc.)
+                Map<String, Object> personajeCompleto = obtenerDetallesPersonaje(personajeId);
+                
+                if (personajeCompleto != null) {
+                    String codigo = generarCodigo(i);
+                    Carta carta = mapearPersonajeACarta(personajeCompleto, codigo);
+                    cartas.add(carta);
+                    log.debug("Carta creada: {} - {} (transformaciones: {})", 
+                            codigo, 
+                            carta.getNombre(), 
+                            carta.getTransformaciones() != null ? carta.getTransformaciones().size() : 0);
+                } else {
+                    log.warn("No se pudieron obtener detalles del personaje ID: {}", personajeId);
+                }
+            }
+
+            if (cartas.isEmpty()) {
+                log.warn("No se pudo crear ninguna carta, usando stub");
+                return generarYGuardarCartasStub();
             }
 
             // Guardar en MongoDB
@@ -157,6 +182,36 @@ public class DragonBallApiServiceImpl implements DragonBallApiService {
         }
 
         return todosPersonajes;
+    }
+
+    /**
+     * Obtiene los detalles completos de un personaje específico por su ID.
+     * Este endpoint trae TODA la información: transformaciones, planeta, etc.
+     */
+    private Map<String, Object> obtenerDetallesPersonaje(String personajeId) {
+        try {
+            log.debug("Obteniendo detalles del personaje ID: {}", personajeId);
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> personajeCompleto = webClient.get()
+                    .uri("/characters/" + personajeId)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+            
+            if (personajeCompleto != null) {
+                log.debug("Detalles obtenidos para: {} (transformaciones: {})", 
+                        personajeCompleto.get("name"),
+                        personajeCompleto.containsKey("transformations") ? 
+                                ((List<?>) personajeCompleto.get("transformations")).size() : 0);
+            }
+            
+            return personajeCompleto;
+            
+        } catch (Exception e) {
+            log.warn("Error al obtener detalles del personaje {}: {}", personajeId, e.getMessage());
+            return null;
+        }
     }
 
     /**
