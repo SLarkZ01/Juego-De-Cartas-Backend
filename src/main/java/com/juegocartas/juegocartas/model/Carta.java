@@ -1,5 +1,7 @@
 package com.juegocartas.juegocartas.model;
 
+import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.annotation.Id;
@@ -13,6 +15,17 @@ public class Carta {
     private String codigo;
     private String nombre;
     private String imagenUrl;
+    // raw fields as provided by the external API
+    private String kiRaw;
+    private String maxKiRaw;
+    // numeric representations for game logic
+    private BigInteger kiBig;
+    private BigInteger maxKiBig;
+
+    private OriginPlanet originPlanet;
+    private List<Transformacion> transformaciones;
+
+    // normalized attributes used by the gameplay (small integer scale)
     private Map<String, Integer> atributos;
     private String tematica;
     private int paquete;
@@ -57,6 +70,54 @@ public class Carta {
 
     public void setImagenUrl(String imagenUrl) {
         this.imagenUrl = imagenUrl;
+    }
+
+    public String getKiRaw() {
+        return kiRaw;
+    }
+
+    public void setKiRaw(String kiRaw) {
+        this.kiRaw = kiRaw;
+    }
+
+    public String getMaxKiRaw() {
+        return maxKiRaw;
+    }
+
+    public void setMaxKiRaw(String maxKiRaw) {
+        this.maxKiRaw = maxKiRaw;
+    }
+
+    public BigInteger getKiBig() {
+        return kiBig;
+    }
+
+    public void setKiBig(BigInteger kiBig) {
+        this.kiBig = kiBig;
+    }
+
+    public BigInteger getMaxKiBig() {
+        return maxKiBig;
+    }
+
+    public void setMaxKiBig(BigInteger maxKiBig) {
+        this.maxKiBig = maxKiBig;
+    }
+
+    public OriginPlanet getOriginPlanet() {
+        return originPlanet;
+    }
+
+    public void setOriginPlanet(OriginPlanet originPlanet) {
+        this.originPlanet = originPlanet;
+    }
+
+    public List<Transformacion> getTransformaciones() {
+        return transformaciones;
+    }
+
+    public void setTransformaciones(List<Transformacion> transformaciones) {
+        this.transformaciones = transformaciones;
     }
 
     public Map<String, Integer> getAtributos() {
