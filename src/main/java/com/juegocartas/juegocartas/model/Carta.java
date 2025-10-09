@@ -1,6 +1,5 @@
 package com.juegocartas.juegocartas.model;
 
-import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
@@ -15,20 +14,19 @@ public class Carta {
     private String codigo;
     private String nombre;
     private String imagenUrl;
-    // raw fields as provided by the external API
-    private String kiRaw;
-    private String maxKiRaw;
-    // numeric representations for game logic
-    private BigInteger kiBig;
-    private BigInteger maxKiBig;
-
-    private OriginPlanet originPlanet;
-    private List<Transformacion> transformaciones;
-
-    // normalized attributes used by the gameplay (small integer scale)
     private Map<String, Integer> atributos;
     private String tematica;
     private int paquete;
+    
+    // Campos adicionales de Dragon Ball
+    private String descripcion;
+    private String raza;
+    private String genero;
+    private String afiliacion;
+    private Planeta planeta;
+    private List<Transformacion> transformaciones;
+    private String kiOriginal; // Ki como string de la API (ej: "60.000.000")
+    private String maxKiOriginal; // MaxKi como string de la API
 
     public Carta() {
     }
@@ -36,6 +34,94 @@ public class Carta {
     public Carta(String codigo, String nombre) {
         this.codigo = codigo;
         this.nombre = nombre;
+    }
+    
+    // Clase interna para Planeta
+    public static class Planeta {
+        private String nombre;
+        private String imagen;
+        private String descripcion;
+        private boolean isDestroyed;
+        
+        public Planeta() {}
+        
+        public Planeta(String nombre, String imagen, String descripcion, boolean isDestroyed) {
+            this.nombre = nombre;
+            this.imagen = imagen;
+            this.descripcion = descripcion;
+            this.isDestroyed = isDestroyed;
+        }
+
+        public String getNombre() {
+            return nombre;
+        }
+
+        public void setNombre(String nombre) {
+            this.nombre = nombre;
+        }
+
+        public String getImagen() {
+            return imagen;
+        }
+
+        public void setImagen(String imagen) {
+            this.imagen = imagen;
+        }
+
+        public String getDescripcion() {
+            return descripcion;
+        }
+
+        public void setDescripcion(String descripcion) {
+            this.descripcion = descripcion;
+        }
+
+        public boolean isDestroyed() {
+            return isDestroyed;
+        }
+
+        public void setDestroyed(boolean destroyed) {
+            isDestroyed = destroyed;
+        }
+    }
+    
+    // Clase interna para Transformación
+    public static class Transformacion {
+        private String nombre;
+        private String imagen;
+        private String ki; // Ki de la transformación como string (ej: "3 Billion")
+        
+        public Transformacion() {}
+        
+        public Transformacion(String nombre, String imagen, String ki) {
+            this.nombre = nombre;
+            this.imagen = imagen;
+            this.ki = ki;
+        }
+
+        public String getNombre() {
+            return nombre;
+        }
+
+        public void setNombre(String nombre) {
+            this.nombre = nombre;
+        }
+
+        public String getImagen() {
+            return imagen;
+        }
+
+        public void setImagen(String imagen) {
+            this.imagen = imagen;
+        }
+
+        public String getKi() {
+            return ki;
+        }
+
+        public void setKi(String ki) {
+            this.ki = ki;
+        }
     }
 
     // getters and setters
@@ -72,54 +158,6 @@ public class Carta {
         this.imagenUrl = imagenUrl;
     }
 
-    public String getKiRaw() {
-        return kiRaw;
-    }
-
-    public void setKiRaw(String kiRaw) {
-        this.kiRaw = kiRaw;
-    }
-
-    public String getMaxKiRaw() {
-        return maxKiRaw;
-    }
-
-    public void setMaxKiRaw(String maxKiRaw) {
-        this.maxKiRaw = maxKiRaw;
-    }
-
-    public BigInteger getKiBig() {
-        return kiBig;
-    }
-
-    public void setKiBig(BigInteger kiBig) {
-        this.kiBig = kiBig;
-    }
-
-    public BigInteger getMaxKiBig() {
-        return maxKiBig;
-    }
-
-    public void setMaxKiBig(BigInteger maxKiBig) {
-        this.maxKiBig = maxKiBig;
-    }
-
-    public OriginPlanet getOriginPlanet() {
-        return originPlanet;
-    }
-
-    public void setOriginPlanet(OriginPlanet originPlanet) {
-        this.originPlanet = originPlanet;
-    }
-
-    public List<Transformacion> getTransformaciones() {
-        return transformaciones;
-    }
-
-    public void setTransformaciones(List<Transformacion> transformaciones) {
-        this.transformaciones = transformaciones;
-    }
-
     public Map<String, Integer> getAtributos() {
         return atributos;
     }
@@ -142,5 +180,69 @@ public class Carta {
 
     public void setPaquete(int paquete) {
         this.paquete = paquete;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
+    public String getRaza() {
+        return raza;
+    }
+
+    public void setRaza(String raza) {
+        this.raza = raza;
+    }
+
+    public String getGenero() {
+        return genero;
+    }
+
+    public void setGenero(String genero) {
+        this.genero = genero;
+    }
+
+    public String getAfiliacion() {
+        return afiliacion;
+    }
+
+    public void setAfiliacion(String afiliacion) {
+        this.afiliacion = afiliacion;
+    }
+
+    public Planeta getPlaneta() {
+        return planeta;
+    }
+
+    public void setPlaneta(Planeta planeta) {
+        this.planeta = planeta;
+    }
+
+    public List<Transformacion> getTransformaciones() {
+        return transformaciones;
+    }
+
+    public void setTransformaciones(List<Transformacion> transformaciones) {
+        this.transformaciones = transformaciones;
+    }
+
+    public String getKiOriginal() {
+        return kiOriginal;
+    }
+
+    public void setKiOriginal(String kiOriginal) {
+        this.kiOriginal = kiOriginal;
+    }
+
+    public String getMaxKiOriginal() {
+        return maxKiOriginal;
+    }
+
+    public void setMaxKiOriginal(String maxKiOriginal) {
+        this.maxKiOriginal = maxKiOriginal;
     }
 }

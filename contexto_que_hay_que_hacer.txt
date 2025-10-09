@@ -1,0 +1,55 @@
+# Contexto del Juego: CARD MATCH BATTLE
+
+## Descripción del Juego
+CARD MATCH BATTLE es un juego de cartas multijugador basado en comparación de atributos. Los jugadores compiten para acumular la mayor cantidad de cartas mediante la comparación estratégica de características.
+
+## Elementos Principales
+
+### Cartas
+- **Total:** 32 cartas organizadas en 4 paquetes de 8 cartas cada uno
+- **Identificación:** Cada carta tiene un código numérico + letra (1A, 1B, 1C, 1D, 2A, 2B, etc.)
+- **Contenido:** Cada carta incluye:
+  - Una imagen del elemento representado
+  - Múltiples atributos numéricos (ej: fuerza, velocidad, tamaño, poder, rareza)
+- **Temáticas:** Animales, planetas, inventos, personajes históricos, pokémon, personajes de anime, etc.
+
+### Jugadores
+- **Mínimo:** 2 jugadores
+- **Máximo:** 7 jugadores
+- Con 7 jugadores, la partida inicia automáticamente
+
+## Mecánica del Juego
+
+### 1. Configuración Inicial
+- Un jugador crea la partida y genera un código único
+- Los demás jugadores se unen usando ese código
+- El sistema reparte todas las cartas equitativamente (las sobrantes se asignan aleatoriamente)
+- Cada jugador solo ve su carta superior
+
+### 2. Orden de Juego
+El primer turno lo tiene quien posea:
+- La carta 1A (prioridad máxima)
+- Si no está presente: 1B, 1C, 1D, 2A... (en ese orden)
+- Si ninguna carta del cuarteto 1 está presente: el primer jugador conectado
+
+### 3. Desarrollo de Cada Ronda
+1. El jugador en turno elige un atributo de su carta (ej: "velocidad")
+2. Ese jugador coloca su carta visible para todos
+3. Los demás jugadores, en orden, revelan su carta superior
+4. Se comparan los valores del atributo elegido
+
+### 4. Resolución
+- **Ganador:** El jugador con el valor más alto en el atributo seleccionado
+- **Premio:** El ganador recoge TODAS las cartas jugadas y las pone al final de su pila
+- **Empate:** Las cartas quedan en la mesa; el ganador de la próxima ronda se lleva todas las acumuladas
+- **Siguiente turno:** El ganador de la ronda elige el atributo para la próxima
+
+## Condiciones de Victoria
+
+El juego termina cuando:
+1. **Victoria absoluta:** Un jugador reúne las 32 cartas
+2. **Límite de tiempo:** Después de 30 minutos, gana quien tenga más cartas
+3. **Empate:** Si hay igual cantidad de cartas al terminar el tiempo
+
+## Objetivo Estratégico
+Conocer las fortalezas de tus cartas y elegir los atributos correctos en el momento oportuno para maximizar tus posibilidades de ganar cada ronda y acumular cartas.
