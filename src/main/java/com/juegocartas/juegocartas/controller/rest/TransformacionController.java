@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
 
 import com.juegocartas.juegocartas.dto.request.ActivarTransformacionRequest;
 import com.juegocartas.juegocartas.dto.request.DesactivarTransformacionRequest;
@@ -53,6 +54,7 @@ public class TransformacionController {
      * @return Respuesta con información de la transformación activada
      */
     @PostMapping("/activar")
+    @Operation(summary = "Activar transformación", description = "Activa una transformación para el jugador indicado en la partida.")
     public ResponseEntity<TransformacionResponse> activarTransformacion(
             @PathVariable String codigo,
             @Valid @RequestBody ActivarTransformacionRequest request) {
@@ -79,6 +81,7 @@ public class TransformacionController {
      * @return Respuesta con información de la desactivación
      */
     @PostMapping("/desactivar")
+    @Operation(summary = "Desactivar transformación", description = "Desactiva la transformación activa del jugador indicado.")
     public ResponseEntity<TransformacionResponse> desactivarTransformacion(
             @PathVariable String codigo,
             @Valid @RequestBody DesactivarTransformacionRequest request) {
