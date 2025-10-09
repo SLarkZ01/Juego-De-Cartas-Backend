@@ -12,6 +12,10 @@ public class Jugador {
     private int numeroCartas = 0;
     private int orden;
     private boolean conectado;
+    
+    // Sistema de transformaciones
+    private String transformacionActiva; // Nombre de la transformación activa
+    private int indiceTransformacion = -1; // Índice de la transformación activa (-1 = sin transformación)
 
     public Jugador() {
     }
@@ -77,5 +81,21 @@ public class Jugador {
 
     public void setConectado(boolean conectado) {
         this.conectado = conectado;
+    }
+
+    public String getTransformacionActiva() {
+        return transformacionActiva;
+    }
+
+    public void setTransformacionActiva(String transformacionActiva) {
+        this.transformacionActiva = transformacionActiva;
+    }
+
+    public int getIndiceTransformacion() {
+        return indiceTransformacion;
+    }
+
+    public void setIndiceTransformacion(int indiceTransformacion) {
+        this.indiceTransformacion = indiceTransformacion;
     }
 }

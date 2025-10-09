@@ -18,9 +18,11 @@ import com.juegocartas.juegocartas.service.PartidaService;
 public class PartidaServiceImpl implements PartidaService {
 
     private final PartidaRepository partidaRepository;
+    private final com.juegocartas.juegocartas.service.EventPublisher eventPublisher;
 
-    public PartidaServiceImpl(PartidaRepository partidaRepository) {
+    public PartidaServiceImpl(PartidaRepository partidaRepository, com.juegocartas.juegocartas.service.EventPublisher eventPublisher) {
         this.partidaRepository = partidaRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -33,6 +35,12 @@ public class PartidaServiceImpl implements PartidaService {
         p.getJugadores().add(jugador);
 
         partidaRepository.save(p);
+
+        // publicar evento jugador unido
+        java.util.Map<String, Object> evt = new java.util.HashMap<>();
+        evt.put("tipo", "JUGADOR_UNIDO");
+        evt.put("jugadorId", jugador.getId());
+        eventPublisher.publish("/topic/partida/" + codigo, evt);
 
         return new PartidaResponse(codigo, jugador.getId(), p.getJugadores());
     }
@@ -47,6 +55,13 @@ public class PartidaServiceImpl implements PartidaService {
         Jugador jugador = new Jugador(UUID.randomUUID().toString(), request.getNombreJugador());
         p.getJugadores().add(jugador);
         partidaRepository.save(p);
+
+        // publicar evento jugador unido
+        java.util.Map<String, Object> evt = new java.util.HashMap<>();
+        evt.put("tipo", "JUGADOR_UNIDO");
+        evt.put("jugadorId", jugador.getId());
+        eventPublisher.publish("/topic/partida/" + codigo, evt);
+
         return new PartidaResponse(codigo, jugador.getId(), p.getJugadores());
     }
 

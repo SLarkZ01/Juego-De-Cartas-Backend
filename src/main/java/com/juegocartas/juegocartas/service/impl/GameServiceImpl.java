@@ -16,6 +16,7 @@ import com.juegocartas.juegocartas.model.Ronda;
 import com.juegocartas.juegocartas.repository.CartaRepository;
 import com.juegocartas.juegocartas.repository.PartidaRepository;
 import com.juegocartas.juegocartas.service.GameService;
+import com.juegocartas.juegocartas.util.TransformacionMultiplicador;
 
 @Service
 public class GameServiceImpl implements GameService {
@@ -91,12 +92,20 @@ public class GameServiceImpl implements GameService {
         jugador.setNumeroCartas(jugador.getCartasEnMano().size());
         jugador.setCartaActual(jugador.getNumeroCartas() > 0 ? jugador.getCartasEnMano().get(0) : null);
 
-        // obtener valor del atributo (por ahora asumimos atributoSeleccionado es 'poder')
+        // obtener valor del atributo con multiplicador de transformación si está activa
         int valor = 0;
         Carta carta = cartaRepository.findFirstByCodigo(cartaCodigo).orElse(null);
         if (carta != null && carta.getAtributos() != null && p.getAtributoSeleccionado() != null) {
             Integer v = carta.getAtributos().get(p.getAtributoSeleccionado());
-            valor = v != null ? v : 0;
+            int valorBase = v != null ? v : 0;
+            
+            // Aplicar multiplicador de transformación si está activa
+            if (jugador.getIndiceTransformacion() >= 0) {
+                double multiplicador = TransformacionMultiplicador.calcularMultiplicador(carta, jugador.getIndiceTransformacion());
+                valor = TransformacionMultiplicador.aplicarMultiplicador(valorBase, multiplicador);
+            } else {
+                valor = valorBase;
+            }
         }
 
         p.getCartasEnMesa().add(new CartaEnMesa(jugadorId, cartaCodigo, valor));
@@ -106,6 +115,81 @@ public class GameServiceImpl implements GameService {
         if (p.getCartasEnMesa().size() == p.getJugadores().size()) {
             resolverRonda(p);
         }
+    }
+
+    @Override
+    public void activarTransformacion(String codigoPartida, String jugadorId, int indiceTransformacion) {
+        Optional<Partida> opt = partidaRepository.findByCodigo(codigoPartida);
+        if (opt.isEmpty()) throw new IllegalArgumentException("Partida no encontrada");
+        Partida p = opt.get();
+        
+        // Buscar jugador
+        Jugador jugador = p.getJugadores().stream()
+                .filter(j -> j.getId().equals(jugadorId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado"));
+        
+        // Verificar que el jugador tiene una carta actual
+        if (jugador.getCartaActual() == null) {
+            throw new IllegalStateException("El jugador no tiene carta actual");
+        }
+        
+        // Obtener la carta del jugador
+        Carta carta = cartaRepository.findFirstByCodigo(jugador.getCartaActual())
+                .orElseThrow(() -> new IllegalArgumentException("Carta no encontrada"));
+        
+        // Verificar que la carta tiene transformaciones
+        if (carta.getTransformaciones() == null || carta.getTransformaciones().isEmpty()) {
+            throw new IllegalStateException("Esta carta no tiene transformaciones disponibles");
+        }
+        
+        // Verificar que el índice es válido
+        if (indiceTransformacion < 0 || indiceTransformacion >= carta.getTransformaciones().size()) {
+            throw new IllegalArgumentException("Índice de transformación inválido");
+        }
+        
+        // Activar transformación
+        jugador.setIndiceTransformacion(indiceTransformacion);
+        jugador.setTransformacionActiva(carta.getTransformaciones().get(indiceTransformacion).getNombre());
+        
+        partidaRepository.save(p);
+        
+        // Emitir evento de transformación activada
+        java.util.Map<String, Object> evento = new java.util.HashMap<>();
+        evento.put("tipo", "TRANSFORMACION_ACTIVADA");
+        evento.put("jugadorId", jugadorId);
+        evento.put("transformacion", jugador.getTransformacionActiva());
+        evento.put("multiplicador", String.format("%.2f", TransformacionMultiplicador.calcularMultiplicador(carta, indiceTransformacion)));
+        
+        eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
+    }
+
+    @Override
+    public void desactivarTransformacion(String codigoPartida, String jugadorId) {
+        Optional<Partida> opt = partidaRepository.findByCodigo(codigoPartida);
+        if (opt.isEmpty()) throw new IllegalArgumentException("Partida no encontrada");
+        Partida p = opt.get();
+        
+        // Buscar jugador
+        Jugador jugador = p.getJugadores().stream()
+                .filter(j -> j.getId().equals(jugadorId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado"));
+        
+        // Desactivar transformación
+        String transformacionAnterior = jugador.getTransformacionActiva();
+        jugador.setIndiceTransformacion(-1);
+        jugador.setTransformacionActiva(null);
+        
+        partidaRepository.save(p);
+        
+        // Emitir evento de transformación desactivada
+        java.util.Map<String, Object> evento = new java.util.HashMap<>();
+        evento.put("tipo", "TRANSFORMACION_DESACTIVADA");
+        evento.put("jugadorId", jugadorId);
+        evento.put("transformacionAnterior", transformacionAnterior);
+        
+        eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
     }
 
     private void resolverRonda(Partida p) {
