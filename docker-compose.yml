@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: juegocartas-mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_DATABASE: juegocartas
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build: .
+    container_name: juegocartas-backend
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/juegocartas
+    depends_on:
+      - mongodb
+
+volumes:
+  mongo-data:
