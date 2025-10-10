@@ -152,12 +152,12 @@ public class GameServiceEmpateTest {
         // Buscar el evento de JUEGO_FINALIZADO
         List<Object> eventos = eventCaptor.getAllValues();
         boolean encontradoEventoFinalizado = eventos.stream()
-            .filter(e -> e instanceof java.util.Map)
-            .map(e -> (java.util.Map<?, ?>) e)
-            .anyMatch(m -> "JUEGO_FINALIZADO".equals(m.get("tipo")) 
-                && "TIEMPO_LIMITE".equals(m.get("razon"))
-                && "p1".equals(m.get("ganadorId"))
-                && Boolean.FALSE.equals(m.get("empate")));
+            .filter(e -> e instanceof com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent)
+            .map(e -> (com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent) e)
+            .anyMatch(m -> "JUEGO_FINALIZADO".equals(m.getTipo()) 
+                && "TIEMPO_LIMITE".equals(m.getRazon())
+                && "p1".equals(m.getGanadorId())
+                && !m.isEmpate());
         
         assertTrue(encontradoEventoFinalizado, "Debe publicarse evento de finalización por tiempo con ganador claro");
     }
@@ -213,11 +213,11 @@ public class GameServiceEmpateTest {
         
         List<Object> eventos = eventCaptor.getAllValues();
         boolean encontradoEmpate = eventos.stream()
-            .filter(e -> e instanceof java.util.Map)
-            .map(e -> (java.util.Map<?, ?>) e)
-            .anyMatch(m -> "JUEGO_FINALIZADO".equals(m.get("tipo")) 
-                && "TIEMPO_LIMITE".equals(m.get("razon"))
-                && Boolean.TRUE.equals(m.get("empate")));
+            .filter(e -> e instanceof com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent)
+            .map(e -> (com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent) e)
+            .anyMatch(m -> "JUEGO_FINALIZADO".equals(m.getTipo()) 
+                && "TIEMPO_LIMITE".equals(m.getRazon())
+                && m.isEmpate());
         
         assertTrue(encontradoEmpate, "Debe publicarse evento de empate por tiempo");
     }

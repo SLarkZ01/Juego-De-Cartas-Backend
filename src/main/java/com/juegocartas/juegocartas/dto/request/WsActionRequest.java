@@ -11,6 +11,9 @@ public class WsActionRequest {
 
     // atributo es opcional para acciones que no lo requieran
     private String atributo;
+    
+    // índice de transformación opcional para ACTIVAR_TRANSFORMACION
+    private Integer indiceTransformacion;
 
     public WsActionRequest() {}
 
@@ -42,5 +45,13 @@ public class WsActionRequest {
 
     public void setAtributo(String atributo) {
         this.atributo = atributo;
+    }
+    
+    public Integer getIndiceTransformacion() {
+        return indiceTransformacion;
+    }
+    
+    public void setIndiceTransformacion(Integer indiceTransformacion) {
+        this.indiceTransformacion = indiceTransformacion;
     }
 }

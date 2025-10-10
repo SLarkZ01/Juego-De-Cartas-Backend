@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -102,11 +101,12 @@ public class GameServiceImplTest {
         ArgumentCaptor<Object> payloadCap = ArgumentCaptor.forClass(Object.class);
         verify(eventPublisher, times(1)).publish(topicCap.capture(), payloadCap.capture());
         assertTrue(topicCap.getValue().contains("/topic/partida/ABC"));
-        // payload should be a Map with tipo=PARTIDA_INICIADA
+        // payload should be a PartidaIniciadaEvent with tipo=PARTIDA_INICIADA
         Object payload = payloadCap.getValue();
-        assertTrue(payload instanceof Map);
-        Map<?,?> map = (Map<?,?>) payload;
-        assertEquals("PARTIDA_INICIADA", map.get("tipo"));
+        assertTrue(payload instanceof com.juegocartas.juegocartas.dto.event.PartidaIniciadaEvent);
+        com.juegocartas.juegocartas.dto.event.PartidaIniciadaEvent event = 
+            (com.juegocartas.juegocartas.dto.event.PartidaIniciadaEvent) payload;
+        assertEquals("PARTIDA_INICIADA", event.getTipo());
     }
 
     @Test

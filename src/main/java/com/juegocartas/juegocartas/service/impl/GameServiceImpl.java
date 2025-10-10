@@ -2,7 +2,6 @@ package com.juegocartas.juegocartas.service.impl;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -89,7 +88,17 @@ public class GameServiceImpl implements GameService {
         partidaRepository.save(p);
 
     // emitir evento PARTIDA_INICIADA
-    eventPublisher.publish("/topic/partida/" + p.getCodigo(), Collections.singletonMap("tipo", "PARTIDA_INICIADA"));
+    Jugador jugadorPrimerTurno = p.getJugadores().stream()
+            .filter(j -> j.getId().equals(primer))
+            .findFirst()
+            .orElse(null);
+    com.juegocartas.juegocartas.dto.event.PartidaIniciadaEvent evento = 
+        new com.juegocartas.juegocartas.dto.event.PartidaIniciadaEvent(
+            primer,
+            jugadorPrimerTurno != null ? jugadorPrimerTurno.getNombre() : "",
+            p.getTiempoLimite()
+        );
+    eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
 
         return p;
     }
@@ -109,7 +118,17 @@ public class GameServiceImpl implements GameService {
             p.setAtributoSeleccionado(atributo);
             partidaRepository.save(p);
 
-            eventPublisher.publish("/topic/partida/" + p.getCodigo(), Collections.singletonMap("tipo", "ATRIBUTO_SELECCIONADO"));
+            Jugador jugador = p.getJugadores().stream()
+                    .filter(j -> j.getId().equals(jugadorId))
+                    .findFirst()
+                    .orElse(null);
+            com.juegocartas.juegocartas.dto.event.AtributoSeleccionadoEvent evento =
+                new com.juegocartas.juegocartas.dto.event.AtributoSeleccionadoEvent(
+                    jugadorId,
+                    jugador != null ? jugador.getNombre() : "",
+                    atributo
+                );
+            eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
         }
     }
 
@@ -158,11 +177,14 @@ public class GameServiceImpl implements GameService {
         partidaRepository.save(p);
 
         // Publicar evento CARTA_JUGADA para que frontend muestre la carta en tiempo real
-        java.util.Map<String, Object> eventoCarta = new java.util.HashMap<>();
-        eventoCarta.put("tipo", "CARTA_JUGADA");
-        eventoCarta.put("jugadorId", jugadorId);
-        eventoCarta.put("carta", cartaCodigo);
-        eventoCarta.put("valor", valor);
+        com.juegocartas.juegocartas.dto.event.CartaJugadaEvent eventoCarta = 
+            new com.juegocartas.juegocartas.dto.event.CartaJugadaEvent(
+                jugadorId,
+                jugador.getNombre(),
+                cartaCodigo,
+                carta != null ? carta.getNombre() : cartaCodigo,
+                carta != null ? carta.getImagenUrl() : ""
+            );
         eventPublisher.publish("/topic/partida/" + p.getCodigo(), eventoCarta);
 
         // si todos los jugadores con cartas jugaron, resolver ronda
@@ -210,11 +232,15 @@ public class GameServiceImpl implements GameService {
         partidaRepository.save(p);
         
         // Emitir evento de transformación activada
-        java.util.Map<String, Object> evento = new java.util.HashMap<>();
-        evento.put("tipo", "TRANSFORMACION_ACTIVADA");
-        evento.put("jugadorId", jugadorId);
-        evento.put("transformacion", jugador.getTransformacionActiva());
-        evento.put("multiplicador", String.format("%.2f", TransformacionMultiplicador.calcularMultiplicador(carta, indiceTransformacion)));
+        double multiplicador = TransformacionMultiplicador.calcularMultiplicador(carta, indiceTransformacion);
+        com.juegocartas.juegocartas.dto.event.TransformacionEvent evento = 
+            new com.juegocartas.juegocartas.dto.event.TransformacionEvent(
+                jugadorId,
+                jugador.getNombre(),
+                jugador.getTransformacionActiva(),
+                multiplicador,
+                true
+            );
         
         eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
     }
@@ -239,10 +265,14 @@ public class GameServiceImpl implements GameService {
         partidaRepository.save(p);
         
         // Emitir evento de transformación desactivada
-        java.util.Map<String, Object> evento = new java.util.HashMap<>();
-        evento.put("tipo", "TRANSFORMACION_DESACTIVADA");
-        evento.put("jugadorId", jugadorId);
-        evento.put("transformacionAnterior", transformacionAnterior);
+        com.juegocartas.juegocartas.dto.event.TransformacionEvent evento = 
+            new com.juegocartas.juegocartas.dto.event.TransformacionEvent(
+                jugadorId,
+                jugador.getNombre(),
+                transformacionAnterior,
+                1.0,
+                false
+            );
         
         eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
     }
@@ -257,15 +287,18 @@ public class GameServiceImpl implements GameService {
 
         // determinar mayor valor
         List<CartaEnMesa> enMesa = p.getCartasEnMesa();
-        CartaEnMesa ganador = enMesa.get(0);
+        CartaEnMesa cartaGanadora = enMesa.get(0);
         boolean empate = false;
         for (CartaEnMesa c : enMesa) {
-            if (c.getValor() > ganador.getValor()) {
-                ganador = c; empate = false;
-            } else if (c.getValor() == ganador.getValor() && !c.getJugadorId().equals(ganador.getJugadorId())) {
+            if (c.getValor() > cartaGanadora.getValor()) {
+                cartaGanadora = c; empate = false;
+            } else if (c.getValor() == cartaGanadora.getValor() && !c.getJugadorId().equals(cartaGanadora.getJugadorId())) {
                 empate = true;
             }
         }
+        
+        final CartaEnMesa ganador = cartaGanadora; // final para lambda
+        final String atributoUsado = p.getAtributoSeleccionado(); // guardar antes de resetear
 
         List<String> cartasGanadas = new ArrayList<>();
         for (CartaEnMesa c : enMesa) cartasGanadas.add(c.getCartaCodigo());
@@ -302,8 +335,37 @@ public class GameServiceImpl implements GameService {
 
     partidaRepository.save(p);
 
-    // emitir RONDA_FINALIZADA
-    eventPublisher.publish("/topic/partida/" + p.getCodigo(), Collections.singletonMap("tipo", "RONDA_FINALIZADA"));
+    // emitir RONDA_RESUELTA con información completa
+    List<com.juegocartas.juegocartas.dto.event.RondaResueltaEvent.ResultadoJugador> resultados = 
+        new ArrayList<>();
+    for (CartaEnMesa c : enMesa) {
+        Jugador j = p.getJugadores().stream()
+                .filter(jug -> jug.getId().equals(c.getJugadorId()))
+                .findFirst()
+                .orElse(null);
+        resultados.add(new com.juegocartas.juegocartas.dto.event.RondaResueltaEvent.ResultadoJugador(
+            c.getJugadorId(),
+            j != null ? j.getNombre() : "",
+            c.getCartaCodigo(),
+            c.getValor()
+        ));
+    }
+    
+    Jugador jugadorGanador = empate ? null : p.getJugadores().stream()
+            .filter(j -> j.getId().equals(ganador.getJugadorId()))
+            .findFirst()
+            .orElse(null);
+    
+    com.juegocartas.juegocartas.dto.event.RondaResueltaEvent evento = 
+        new com.juegocartas.juegocartas.dto.event.RondaResueltaEvent(
+            empate ? null : ganador.getJugadorId(),
+            jugadorGanador != null ? jugadorGanador.getNombre() : "",
+            atributoUsado,
+            empate ? 0 : ganador.getValor(),
+            resultados,
+            empate
+        );
+    eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
     }
 
     private void verificarFinDeJuego(Partida p) {
@@ -318,7 +380,15 @@ public class GameServiceImpl implements GameService {
                     .orElseThrow();
             p.setGanador(ganador.getId());
             p.setEstado("FINALIZADA");
-            eventPublisher.publish("/topic/partida/" + p.getCodigo(), Collections.singletonMap("tipo", "JUEGO_FINALIZADO"));
+            
+            com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent evento =
+                new com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent(
+                    ganador.getId(),
+                    ganador.getNombre(),
+                    "Ganador por quedarse con todas las cartas",
+                    false
+                );
+            eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
             return;
         }
         
@@ -332,7 +402,15 @@ public class GameServiceImpl implements GameService {
             if (j.getNumeroCartas() == totalEnJuego && totalEnJuego > 0) {
                 p.setGanador(j.getId());
                 p.setEstado("FINALIZADA");
-                eventPublisher.publish("/topic/partida/" + p.getCodigo(), Collections.singletonMap("tipo", "JUEGO_FINALIZADO"));
+                
+                com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent evento =
+                    new com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent(
+                        j.getId(),
+                        j.getNombre(),
+                        "Ganador por tener todas las cartas",
+                        false
+                    );
+                eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
                 return;
             }
         }
@@ -355,34 +433,39 @@ public class GameServiceImpl implements GameService {
                 .filter(j -> j.getNumeroCartas() == maxCartas)
                 .toList();
         
-        java.util.Map<String, Object> evento = new java.util.HashMap<>();
-        evento.put("tipo", "JUEGO_FINALIZADO");
-        evento.put("razon", "TIEMPO_LIMITE");
+        com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent evento;
         
         // Detectar empate: si hay más de un jugador con la cantidad máxima
         if (jugadoresConMaxCartas.size() > 1) {
             // Empate - no hay ganador único
             p.setGanador(null);
             p.setEstado("FINALIZADA");
-            evento.put("ganadorId", null);
-            evento.put("empate", true);
-            evento.put("jugadoresEmpatados", jugadoresConMaxCartas.stream()
-                    .map(Jugador::getId)
-                    .toList());
-            evento.put("cantidadCartas", maxCartas);
+            evento = new com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent(
+                null,
+                "EMPATE",
+                "TIEMPO_LIMITE",
+                true
+            );
         } else if (!jugadoresConMaxCartas.isEmpty()) {
             // Hay un ganador claro
             Jugador ganador = jugadoresConMaxCartas.get(0);
             p.setGanador(ganador.getId());
             p.setEstado("FINALIZADA");
-            evento.put("ganadorId", ganador.getId());
-            evento.put("empate", false);
-            evento.put("cantidadCartas", maxCartas);
+            evento = new com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent(
+                ganador.getId(),
+                ganador.getNombre(),
+                "TIEMPO_LIMITE",
+                false
+            );
         } else {
             // Caso extremo: no hay jugadores (no debería ocurrir)
             p.setEstado("FINALIZADA");
-            evento.put("ganadorId", null);
-            evento.put("empate", false);
+            evento = new com.juegocartas.juegocartas.dto.event.JuegoFinalizadoEvent(
+                null,
+                "",
+                "Partida finalizada sin jugadores",
+                false
+            );
         }
         
         partidaRepository.save(p);
