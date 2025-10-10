@@ -11,14 +11,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.juegocartas.juegocartas.dto.request.CrearPartidaRequest;
 import com.juegocartas.juegocartas.dto.request.UnirsePartidaRequest;
+import com.juegocartas.juegocartas.dto.response.ErrorResponse;
 import com.juegocartas.juegocartas.dto.response.PartidaDetailResponse;
 import com.juegocartas.juegocartas.dto.response.PartidaResponse;
 import com.juegocartas.juegocartas.service.PartidaService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/partidas")
+@Tag(name = "Partidas", description = "Endpoints para gestionar partidas: crear, unirse, consultar estado")
 public class PartidaController {
 
     private final PartidaService partidaService;
@@ -28,29 +36,85 @@ public class PartidaController {
     }
 
     @PostMapping("/crear")
-    @Operation(summary = "Crear partida", description = "Crea una nueva partida y devuelve datos iniciales (codigo y jugadorId).")
-    public ResponseEntity<PartidaResponse> crear(@RequestBody CrearPartidaRequest request) {
+    @Operation(
+        summary = "Crear nueva partida",
+        description = "Crea una partida nueva y genera un código único de 6 caracteres. El creador se une automáticamente como primer jugador."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Partida creada exitosamente",
+                    content = @Content(schema = @Schema(implementation = PartidaResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<PartidaResponse> crear(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Datos para crear la partida (nombre del jugador creador)",
+                required = true
+            )
+            @RequestBody CrearPartidaRequest request) {
         return ResponseEntity.ok(partidaService.crearPartida(request));
     }
 
     @PostMapping("/{codigo}/unirse")
-    @Operation(summary = "Unirse a partida", description = "Permite a un jugador unirse a una partida existente por código.")
-    public ResponseEntity<PartidaResponse> unirse(@PathVariable String codigo, @RequestBody UnirsePartidaRequest request) {
+    @Operation(
+        summary = "Unirse a partida existente",
+        description = "Permite a un jugador unirse a una partida usando el código de 6 caracteres. Máximo 7 jugadores por partida."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Jugador unido exitosamente",
+                    content = @Content(schema = @Schema(implementation = PartidaResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Partida no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Partida llena o ya iniciada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<PartidaResponse> unirse(
+            @Parameter(description = "Código único de la partida (6 caracteres)", example = "ABC123")
+            @PathVariable String codigo,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Datos del jugador que se une",
+                required = true
+            )
+            @RequestBody UnirsePartidaRequest request) {
         return ResponseEntity.ok(partidaService.unirsePartida(codigo, request));
     }
 
     @GetMapping("/{codigo}")
-    @Operation(summary = "Obtener partida", description = "Obtiene información de la partida por código.")
-    public ResponseEntity<PartidaResponse> obtener(@PathVariable String codigo) {
+    @Operation(
+        summary = "Obtener información básica de partida",
+        description = "Consulta el estado actual de una partida (número de jugadores, estado, etc.)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Partida encontrada",
+                    content = @Content(schema = @Schema(implementation = PartidaResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Partida no encontrada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<PartidaResponse> obtener(
+            @Parameter(description = "Código único de la partida", example = "ABC123")
+            @PathVariable String codigo) {
         return ResponseEntity.ok(partidaService.obtenerPartida(codigo));
     }
     
     @GetMapping("/{codigo}/detalle")
-    @Operation(summary = "Obtener detalle de partida", 
-               description = "Obtiene información detallada de la partida para un jugador específico. " +
-                           "Oculta las cartas en mano de otros jugadores (privacidad).")
+    @Operation(
+        summary = "Obtener detalle completo de partida",
+        description = """
+            Obtiene información detallada de la partida para un jugador específico.
+            Incluye las cartas en mano del jugador solicitante pero oculta las de otros jugadores (privacidad).
+            Ideal para actualizar el estado del juego en el frontend.
+            """
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Detalle obtenido exitosamente",
+                    content = @Content(schema = @Schema(implementation = PartidaDetailResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Partida o jugador no encontrado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<PartidaDetailResponse> obtenerDetalle(
+            @Parameter(description = "Código único de la partida", example = "ABC123")
             @PathVariable String codigo,
+            @Parameter(description = "ID del jugador solicitante", example = "player-uuid-1234")
             @RequestParam String jugadorId) {
         return ResponseEntity.ok(partidaService.obtenerPartidaDetalle(codigo, jugadorId));
     }
