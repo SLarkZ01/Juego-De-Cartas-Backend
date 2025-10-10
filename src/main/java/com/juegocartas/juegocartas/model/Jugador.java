@@ -6,6 +6,7 @@ import java.util.List;
 public class Jugador {
 
     private String id;
+    private String userId; // ID del usuario autenticado
     private String nombre;
     private List<String> cartasEnMano = new ArrayList<>();
     private String cartaActual;
@@ -20,8 +21,9 @@ public class Jugador {
     public Jugador() {
     }
 
-    public Jugador(String id, String nombre) {
+    public Jugador(String id, String userId, String nombre) {
         this.id = id;
+        this.userId = userId;
         this.nombre = nombre;
         this.cartasEnMano = new ArrayList<>();
         this.numeroCartas = 0;
@@ -33,6 +35,14 @@ public class Jugador {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getNombre() {

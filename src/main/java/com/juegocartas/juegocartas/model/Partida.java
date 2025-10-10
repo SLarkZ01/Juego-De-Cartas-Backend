@@ -24,6 +24,10 @@ public class Partida {
     private Instant tiempoInicio;
     private int tiempoLimite = 1800; // 30 minutos por defecto
     private Instant fechaCreacion = Instant.now();
+    
+    // Configuración de jugadores
+    private int minJugadores = 2;
+    private int maxJugadores = 7;
 
     public Partida() {
     }
@@ -134,5 +138,21 @@ public class Partida {
 
     public void setFechaCreacion(Instant fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
+    }
+
+    public int getMinJugadores() {
+        return minJugadores;
+    }
+
+    public void setMinJugadores(int minJugadores) {
+        this.minJugadores = minJugadores;
+    }
+
+    public int getMaxJugadores() {
+        return maxJugadores;
+    }
+
+    public void setMaxJugadores(int maxJugadores) {
+        this.maxJugadores = maxJugadores;
     }
 }

@@ -48,10 +48,13 @@ public class PartidaController {
     })
     public ResponseEntity<PartidaResponse> crear(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                description = "Datos para crear la partida (nombre del jugador creador)",
-                required = true
+                description = "Request vacío (el nombre se obtiene del usuario autenticado)",
+                required = false
             )
-            @RequestBody CrearPartidaRequest request) {
+            @RequestBody(required = false) CrearPartidaRequest request) {
+        if (request == null) {
+            request = new CrearPartidaRequest();
+        }
         return ResponseEntity.ok(partidaService.crearPartida(request));
     }
 
@@ -72,10 +75,13 @@ public class PartidaController {
             @Parameter(description = "Código único de la partida (6 caracteres)", example = "ABC123")
             @PathVariable String codigo,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                description = "Datos del jugador que se une",
-                required = true
+                description = "Request vacío (el nombre se obtiene del usuario autenticado)",
+                required = false
             )
-            @RequestBody UnirsePartidaRequest request) {
+            @RequestBody(required = false) UnirsePartidaRequest request) {
+        if (request == null) {
+            request = new UnirsePartidaRequest();
+        }
         return ResponseEntity.ok(partidaService.unirsePartida(codigo, request));
     }
 

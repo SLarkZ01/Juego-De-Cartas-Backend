@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.juegocartas.juegocartas.dto.request.CrearPartidaRequest;
@@ -14,10 +15,13 @@ import com.juegocartas.juegocartas.dto.response.JugadorPrivateDTO;
 import com.juegocartas.juegocartas.dto.response.JugadorPublicDTO;
 import com.juegocartas.juegocartas.dto.response.PartidaDetailResponse;
 import com.juegocartas.juegocartas.dto.response.PartidaResponse;
+import com.juegocartas.juegocartas.exception.BadRequestException;
 import com.juegocartas.juegocartas.model.EstadoPartida;
 import com.juegocartas.juegocartas.model.Jugador;
 import com.juegocartas.juegocartas.model.Partida;
+import com.juegocartas.juegocartas.model.Usuario;
 import com.juegocartas.juegocartas.repository.PartidaRepository;
+import com.juegocartas.juegocartas.service.GameService;
 import com.juegocartas.juegocartas.service.PartidaService;
 
 /**
@@ -29,24 +33,43 @@ import com.juegocartas.juegocartas.service.PartidaService;
  */
 @Service
 public class PartidaServiceImpl implements PartidaService {
-
-    private static final int MAX_JUGADORES = 7;
     
     private final PartidaRepository partidaRepository;
     private final com.juegocartas.juegocartas.service.EventPublisher eventPublisher;
+    private final GameService gameService;
 
-    public PartidaServiceImpl(PartidaRepository partidaRepository, com.juegocartas.juegocartas.service.EventPublisher eventPublisher) {
+    public PartidaServiceImpl(PartidaRepository partidaRepository, 
+                             com.juegocartas.juegocartas.service.EventPublisher eventPublisher,
+                             GameService gameService) {
         this.partidaRepository = partidaRepository;
         this.eventPublisher = eventPublisher;
+        this.gameService = gameService;
+    }
+    
+    /**
+     * Obtiene el usuario autenticado del contexto de seguridad.
+     */
+    private Usuario obtenerUsuarioAutenticado() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof Usuario) {
+            return (Usuario) principal;
+        }
+        throw new BadRequestException("Usuario no autenticado");
     }
 
     @Override
     public PartidaResponse crearPartida(CrearPartidaRequest request) {
+        Usuario usuario = obtenerUsuarioAutenticado();
+        
         String codigo = generarCodigo();
         Partida p = new Partida(codigo);
         p.setEstado(EstadoPartida.EN_ESPERA.name());
 
-        Jugador jugador = new Jugador(UUID.randomUUID().toString(), request.getNombreJugador());
+        // El creador es el jugador 1 (orden = 1)
+        // Usar el username del usuario autenticado (único)
+        Jugador jugador = new Jugador(UUID.randomUUID().toString(), usuario.getId(), usuario.getUsername());
+        jugador.setOrden(1);
+        jugador.setConectado(true);
         p.getJugadores().add(jugador);
 
         partidaRepository.save(p);
@@ -57,7 +80,7 @@ public class PartidaServiceImpl implements PartidaService {
                 jugador.getId(), 
                 jugador.getNombre(), 
                 p.getJugadores().size(), 
-                MAX_JUGADORES
+                p.getMaxJugadores()
             );
         eventPublisher.publish("/topic/partida/" + codigo, evt);
 
@@ -66,19 +89,39 @@ public class PartidaServiceImpl implements PartidaService {
 
     @Override
     public PartidaResponse unirsePartida(String codigo, UnirsePartidaRequest request) {
+        Usuario usuario = obtenerUsuarioAutenticado();
+        
         Optional<Partida> opt = partidaRepository.findByCodigo(codigo);
         if (opt.isEmpty()) {
-            throw new IllegalArgumentException("Partida no encontrada: " + codigo);
+            throw new BadRequestException("Partida no encontrada: " + codigo);
         }
         Partida p = opt.get();
         
-        // Validar máximo de jugadores
-        if (p.getJugadores().size() >= MAX_JUGADORES) {
-            throw new IllegalStateException("La partida está llena. Máximo " + MAX_JUGADORES + " jugadores.");
+        // Validar que la partida esté en espera
+        if (!EstadoPartida.EN_ESPERA.name().equals(p.getEstado())) {
+            throw new BadRequestException("La partida ya ha iniciado");
         }
         
-        Jugador jugador = new Jugador(UUID.randomUUID().toString(), request.getNombreJugador());
+        // Validar máximo de jugadores
+        if (p.getJugadores().size() >= p.getMaxJugadores()) {
+            throw new BadRequestException("La partida está llena. Máximo " + p.getMaxJugadores() + " jugadores.");
+        }
+        
+        // Validar que el usuario no esté ya en la partida
+        boolean yaEnPartida = p.getJugadores().stream()
+            .anyMatch(j -> j.getUserId().equals(usuario.getId()));
+        if (yaEnPartida) {
+            throw new BadRequestException("Ya estás en esta partida");
+        }
+        
+        // Crear jugador con orden secuencial
+        // Usar el username del usuario autenticado (único)
+        int nuevoOrden = p.getJugadores().size() + 1;
+        Jugador jugador = new Jugador(UUID.randomUUID().toString(), usuario.getId(), usuario.getUsername());
+        jugador.setOrden(nuevoOrden);
+        jugador.setConectado(true);
         p.getJugadores().add(jugador);
+        
         partidaRepository.save(p);
 
         // publicar evento jugador unido
@@ -87,9 +130,14 @@ public class PartidaServiceImpl implements PartidaService {
                 jugador.getId(), 
                 jugador.getNombre(), 
                 p.getJugadores().size(), 
-                MAX_JUGADORES
+                p.getMaxJugadores()
             );
         eventPublisher.publish("/topic/partida/" + codigo, evt);
+        
+        // Auto-iniciar si se alcanzó el máximo de jugadores (7)
+        if (p.getJugadores().size() == p.getMaxJugadores()) {
+            gameService.iniciarPartida(codigo);
+        }
 
         return new PartidaResponse(codigo, jugador.getId(), p.getJugadores());
     }
