@@ -37,13 +37,16 @@ public class PartidaServiceImpl implements PartidaService {
     private final PartidaRepository partidaRepository;
     private final com.juegocartas.juegocartas.service.EventPublisher eventPublisher;
     private final GameService gameService;
+    private final com.juegocartas.juegocartas.service.DisconnectGraceService disconnectGraceService;
 
     public PartidaServiceImpl(PartidaRepository partidaRepository, 
                              com.juegocartas.juegocartas.service.EventPublisher eventPublisher,
-                             GameService gameService) {
+                             GameService gameService,
+                             com.juegocartas.juegocartas.service.DisconnectGraceService disconnectGraceService) {
         this.partidaRepository = partidaRepository;
         this.eventPublisher = eventPublisher;
         this.gameService = gameService;
+        this.disconnectGraceService = disconnectGraceService;
     }
     
     /**
@@ -202,6 +205,29 @@ public class PartidaServiceImpl implements PartidaService {
     public PartidaResponse reconectarPartida(String codigo) {
         Usuario usuario = obtenerUsuarioAutenticado();
 
+        // Cancelar cualquier tarea pendiente de desconexión para este usuario
+        try {
+            // buscar jugadorId en la partida y cancelar
+            var optCancel = partidaRepository.findByCodigo(codigo);
+            if (optCancel.isPresent()) {
+                var pCancel = optCancel.get();
+                for (Jugador j : pCancel.getJugadores()) {
+                    if (j.getUserId().equals(usuario.getId())) {
+                        // cancelar grace
+                        try {
+                            // DisconnectGraceService inyectado/uso via campo (ver constructor)
+                            this.disconnectGraceService.cancel(j.getId());
+                        } catch (Exception ex) {
+                            // no crítico
+                        }
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // ignorar
+        }
+
         Optional<Partida> opt = partidaRepository.findByCodigo(codigo);
         if (opt.isEmpty()) {
             throw new BadRequestException("Partida no encontrada: " + codigo);
@@ -233,6 +259,9 @@ public class PartidaServiceImpl implements PartidaService {
 
         for (Jugador j : p.getJugadores()) {
             if (j.getId().equals(jugadorId)) {
+                // Cancelar pending disconnect por si existiera
+                try { this.disconnectGraceService.cancel(jugadorId); } catch (Exception e) { }
+
                 j.setConectado(true);
                 partidaRepository.save(p);
 

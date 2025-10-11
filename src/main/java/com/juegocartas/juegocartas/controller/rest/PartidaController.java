@@ -133,6 +133,11 @@ public class PartidaController {
             @Parameter(description = "Código único de la partida", example = "ABC123") @PathVariable String codigo,
             @RequestBody(required = false) ReconectarRequest request) {
 
+        // Añadir logging para facilitar debugging: mostrar código y jugadorId (si se recibe)
+        String jugadorLog = request != null ? request.getJugadorId() : null;
+        org.slf4j.LoggerFactory.getLogger(PartidaController.class)
+                .info("Reconectar request recibido: partida={}, jugadorId={}", codigo, jugadorLog);
+
         if (request != null && request.getJugadorId() != null) {
             return ResponseEntity.ok(partidaService.reconectarPartidaPorJugadorId(codigo, request.getJugadorId()));
         }

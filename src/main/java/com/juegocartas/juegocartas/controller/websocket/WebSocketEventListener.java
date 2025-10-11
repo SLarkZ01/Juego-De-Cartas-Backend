@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
@@ -29,11 +30,17 @@ public class WebSocketEventListener {
 
     private final com.juegocartas.juegocartas.repository.PartidaRepository partidaRepository;
     private final com.juegocartas.juegocartas.service.EventPublisher eventPublisher;
+    private final com.juegocartas.juegocartas.service.DisconnectGraceService disconnectGraceService;
+    private final long graceSeconds;
 
     public WebSocketEventListener(com.juegocartas.juegocartas.repository.PartidaRepository partidaRepository,
-                                  com.juegocartas.juegocartas.service.EventPublisher eventPublisher) {
+                                  com.juegocartas.juegocartas.service.EventPublisher eventPublisher,
+                                  com.juegocartas.juegocartas.service.DisconnectGraceService disconnectGraceService,
+                                  @Value("${app.disconnect.graceSeconds:5}") long graceSeconds) {
         this.partidaRepository = partidaRepository;
         this.eventPublisher = eventPublisher;
+        this.disconnectGraceService = disconnectGraceService;
+        this.graceSeconds = graceSeconds;
     }
 
     @EventListener
@@ -60,6 +67,18 @@ public class WebSocketEventListener {
             String partidaCodigo = destination.substring("/topic/partida/".length());
             sessionPartidaMap.put(sessionId, partidaCodigo);
             logger.info("Cliente {} suscrito a partida {}", sessionId, partidaCodigo);
+
+            // Publicar el estado actual de la partida para sincronizar al nuevo suscriptor
+            try {
+                var opt = partidaRepository.findByCodigo(partidaCodigo);
+                if (opt.isPresent()) {
+                    var partida = opt.get();
+                    var partidaResp = new com.juegocartas.juegocartas.dto.response.PartidaResponse(partidaCodigo, null, partida.getJugadores());
+                    eventPublisher.publish("/topic/partida/" + partidaCodigo, partidaResp);
+                }
+            } catch (Exception e) {
+                logger.error("Error publicando estado inicial de la partida al suscribirse: {}", e.getMessage(), e);
+            }
         }
     }
 
@@ -73,30 +92,33 @@ public class WebSocketEventListener {
         String partidaCodigo = sessionPartidaMap.remove(sessionId);
         String jugadorId = sessionJugadorMap.remove(sessionId);
         
-        if (partidaCodigo != null) {
-            logger.info("Cliente desconectado de partida: sessionId={}, partida={}, jugador={}", 
+        if (partidaCodigo != null && jugadorId != null) {
+            logger.info("Cliente desconectado (programando grace) sessionId={}, partida={}, jugador={}", 
                        sessionId, partidaCodigo, jugadorId);
 
-            // Marcar jugador como desconectado en la partida persistida
-            try {
-                var opt = partidaRepository.findByCodigo(partidaCodigo);
-                if (opt.isPresent() && jugadorId != null) {
-                    com.juegocartas.juegocartas.model.Partida partida = opt.get();
-                    for (com.juegocartas.juegocartas.model.Jugador j : partida.getJugadores()) {
-                        if (jugadorId.equals(j.getId())) {
-                            j.setConectado(false);
-                            partidaRepository.save(partida);
+            // Programar el marcado como desconectado tras un grace period (configurable)
+            String graceKey = jugadorId;
+            disconnectGraceService.scheduleDisconnect(graceKey, () -> {
+                try {
+                    var opt = partidaRepository.findByCodigo(partidaCodigo);
+                    if (opt.isPresent()) {
+                        com.juegocartas.juegocartas.model.Partida partida = opt.get();
+                        for (com.juegocartas.juegocartas.model.Jugador j : partida.getJugadores()) {
+                            if (jugadorId.equals(j.getId())) {
+                                j.setConectado(false);
+                                partidaRepository.save(partida);
 
-                            // Publicar estado actualizado de la partida
-                            eventPublisher.publish("/topic/partida/" + partidaCodigo,
-                                    new com.juegocartas.juegocartas.dto.response.PartidaResponse(partidaCodigo, j.getId(), partida.getJugadores()));
-                            break;
+                                // Publicar estado actualizado de la partida
+                                eventPublisher.publish("/topic/partida/" + partidaCodigo,
+                                        new com.juegocartas.juegocartas.dto.response.PartidaResponse(partidaCodigo, j.getId(), partida.getJugadores()));
+                                break;
+                            }
                         }
                     }
+                } catch (Exception e) {
+                    logger.error("Error marcando jugador desconectado tras grace: {}", e.getMessage(), e);
                 }
-            } catch (Exception e) {
-                logger.error("Error marcando jugador desconectado: {}", e.getMessage(), e);
-            }
+            }, this.graceSeconds);
         }
     }
     
@@ -107,6 +129,9 @@ public class WebSocketEventListener {
     public void registrarJugador(String sessionId, String jugadorId) {
         sessionJugadorMap.put(sessionId, jugadorId);
         logger.debug("Jugador {} registrado en sesión {}", jugadorId, sessionId);
+
+        // Si había una tarea pendiente de desconexión, cancelarla (jugador reconectó rápido)
+        disconnectGraceService.cancel(jugadorId);
     }
 
     /**

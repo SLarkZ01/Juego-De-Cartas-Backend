@@ -18,8 +18,12 @@ public class PartidaWebSocketController {
     private static final Logger logger = LoggerFactory.getLogger(PartidaWebSocketController.class);
 
     private final WebSocketEventListener wsListener;
-    public PartidaWebSocketController(WebSocketEventListener wsListener) {
+    private final com.juegocartas.juegocartas.service.PartidaService partidaService;
+
+    public PartidaWebSocketController(WebSocketEventListener wsListener,
+                                      com.juegocartas.juegocartas.service.PartidaService partidaService) {
         this.wsListener = wsListener;
+        this.partidaService = partidaService;
     }
 
     /**
@@ -36,10 +40,22 @@ public class PartidaWebSocketController {
 
             if (jugadorId != null) {
                 wsListener.registrarJugador(sessionId, jugadorId);
-            }
 
-            // If request contains jugadorId and also codigo we could call reconectarPorJugadorId
-            // But the HTTP reconectar endpoint is also available. Keep WS minimal.
+                // If the request also contains partidaCodigo, mark the jugador as conectado
+                // en la partida y publicar el estado actualizado para que otros clientes lo vean.
+                if (request != null) {
+                    String partidaCodigo = request.getPartidaCodigo();
+                    if (partidaCodigo != null) {
+                        try {
+                            partidaService.reconectarPartidaPorJugadorId(partidaCodigo, jugadorId);
+                            // Asociar sesión a la partida para manejo de desconexiones
+                            wsListener.registrarJugadorEnPartida(sessionId, jugadorId, partidaCodigo);
+                        } catch (Exception e) {
+                            logger.error("Error reconectando jugador via WS registrar: {}", e.getMessage(), e);
+                        }
+                    }
+                }
+            }
         } catch (Exception e) {
             logger.error("Error en registrar WS: {}", e.getMessage(), e);
         }

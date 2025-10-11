@@ -11,15 +11,18 @@ Esta guía detalla cómo integrar el backend del Juego de Cartas con una aplicac
 - [Manejo de Errores](#manejo-de-errores)
 - [Ejemplos Completos](#ejemplos-completos)
 
----
-
 ## 🚀 Configuración Inicial
 
 ### 1. Variables de Entorno
 
 Crea un archivo `.env.local` en tu proyecto Next.js:
 
-```env
+  // incluir partidaCodigo si está disponible para acelerar la asociación en el servidor
+  client.publish({
+    destination: '/app/partida/registrar',
+    body: JSON.stringify({ jugadorId: user.userId, partidaCodigo }),
+    skipContentLengthHeader: true
+  });
 NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws
 ```
@@ -730,7 +733,8 @@ const user = authService.getCurrentUser();
 if (user?.userId) {
   client.publish({
     destination: '/app/partida/registrar',
-    body: JSON.stringify({ jugadorId: user.userId }),
+    body: JSON.stringify({ jugadorId: user.userId, partidaCodigo: codigo }),
+    skipContentLengthHeader: true
   });
 }
 ```
@@ -754,12 +758,95 @@ const reconectar = async (codigo: string) => {
 };
 ```
 
+### Ejemplo práctico: hook simple para el lobby
+
+Este hook muestra cómo combinar la llamada REST de reconexión opcional, el registro STOMP y la suscripción al topic. El servidor publicará inmediatamente el `PartidaResponse` al suscribirse, por lo que el hook simplemente actualiza la lista de jugadores cuando llega el payload.
+
+```typescript
+import { useEffect, useRef, useState } from 'react';
+import SockJS from 'sockjs-client';
+import { Client, IMessage } from '@stomp/stompjs';
+import api from '@/lib/axios';
+import { authService } from '@/services/auth.service';
+
+export function useLobby(partidaCodigo: string) {
+  const clientRef = useRef<Client | null>(null);
+  const [jugadores, setJugadores] = useState<any[]>([]);
+
+  useEffect(() => {
+    const user = authService.getCurrentUser();
+    let mounted = true;
+
+    const start = async () => {
+      if (user?.userId) {
+        try {
+          await api.post(`/api/partidas/${partidaCodigo}/reconectar`, { jugadorId: user.userId });
+        } catch (e) {
+          // puede fallar si el jugador no está en la partida; ignorar
+        }
+      }
+
+      const socket = new SockJS(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:8080/ws');
+      const client = new Client({ webSocketFactory: () => socket });
+
+      client.onConnect = () => {
+        if (!mounted) return;
+        // registrar sesión WS con jugadorId y partidaCodigo
+        if (user?.userId) {
+          client.publish({
+            destination: '/app/partida/registrar',
+            body: JSON.stringify({ jugadorId: user.userId, partidaCodigo }),
+            skipContentLengthHeader: true
+          });
+        }
+
+        client.subscribe(`/topic/partida/${partidaCodigo}`, (msg: IMessage) => {
+          const payload = JSON.parse(msg.body);
+          if (payload && Array.isArray(payload.jugadores)) {
+            setJugadores(payload.jugadores);
+          }
+        });
+      };
+
+      client.activate();
+      clientRef.current = client;
+    };
+
+    start();
+
+    return () => {
+      mounted = false;
+      clientRef.current?.deactivate();
+    };
+  }, [partidaCodigo]);
+
+  return { jugadores };
+}
+```
+
+### Grace period en reconexiones (nuevo)
+
+El backend aplica ahora un grace period de 5 segundos antes de marcar a un jugador como desconectado. Esto reduce el flicker en el lobby cuando el usuario recarga la página.
+
+Qué hace el cliente para aprovecharlo:
+
+1. Al montar la página intenta (opcional) reconectar por REST: POST /api/partidas/{codigo}/reconectar con `{ jugadorId }`.
+2. Abre la conexión WS y publica a `/app/partida/registrar` con `{ jugadorId, partidaCodigo }` lo antes posible en `onConnect`.
+3. Suscríbete a `/topic/partida/{codigo}` — el servidor publicará inmediatamente el `PartidaResponse` y, si la reconexión fue exitosa, `jugador.conectado` permanecerá en `true`.
+
+Si el usuario recarga y vuelve a conectar dentro de los 5 segundos, el servidor cancelará el marcado como desconectado y no verás el estado "desconectado" en el lobby.
+
+
 3) Después de llamar al endpoint REST, volver a abrir la conexión WS y suscribirse a `/topic/partida/{codigo}` — el servidor publicará inmediatamente un `PartidaResponse` actualizado con la bandera `conectado=true` para el jugador.
 
 Notas importantes:
 
 - El backend publica siempre `PartidaResponse` con la lista completa de jugadores en `/topic/partida/{codigo}`; el frontend debe observar `jugadores[].conectado` para mostrar estados de conexión en el lobby.
 - Si quieres mayor robustez (por ejemplo tolerar reinicio del servidor), considera guardar el mapping session->jugador en Redis y recuperar al reactivar la instancia.
+
+Nota importante sobre sincronización de estado:
+
+- Para evitar condiciones de carrera el servidor publica el estado canónico de la partida inmediatamente después de que detecta una nueva suscripción a `/topic/partida/{codigo}`. En la práctica esto significa que, después de reconectar vía REST o reabrir la conexión WS, basta con suscribirse al topic: el servidor enviará el `PartidaResponse` actual y el cliente no debería perder eventos publicados justo antes de la suscripción.
 
 
 ### Hook de React para WebSocket
