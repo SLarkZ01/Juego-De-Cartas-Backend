@@ -144,4 +144,11 @@ public class PartidaController {
 
         return ResponseEntity.ok(partidaService.reconectarPartida(codigo));
     }
+
+    @PostMapping("/{codigo}/salir")
+    @Operation(summary = "Salir de la partida (lobby)", description = "Permite al jugador autenticado salir de la partida antes de que inicie. Publica el estado actualizado en el topic de la partida.")
+    public ResponseEntity<PartidaResponse> salir(
+            @Parameter(description = "Código único de la partida", example = "ABC123") @PathVariable String codigo) {
+        return ResponseEntity.ok(partidaService.salirPartida(codigo));
+    }
 }

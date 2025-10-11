@@ -281,6 +281,62 @@ public class PartidaServiceImpl implements PartidaService {
 
         throw new BadRequestException("Jugador no encontrado en la partida: " + jugadorId);
     }
+
+    @Override
+    public PartidaResponse salirPartida(String codigo) {
+        Usuario usuario = obtenerUsuarioAutenticado();
+
+        Optional<Partida> opt = partidaRepository.findByCodigo(codigo);
+        if (opt.isEmpty()) {
+            throw new BadRequestException("Partida no encontrada: " + codigo);
+        }
+        Partida p = opt.get();
+
+        // Buscar jugador por userId
+        for (Jugador j : new ArrayList<>(p.getJugadores())) {
+            if (j.getUserId().equals(usuario.getId())) {
+                final String jugadorId = j.getId();
+                return salirPartidaPorJugadorId(codigo, jugadorId);
+            }
+        }
+
+        throw new BadRequestException("Usuario no encontrado en la partida: " + codigo);
+    }
+
+    @Override
+    public PartidaResponse salirPartidaPorJugadorId(String codigo, String jugadorId) {
+        Optional<Partida> opt = partidaRepository.findByCodigo(codigo);
+        if (opt.isEmpty()) {
+            throw new BadRequestException("Partida no encontrada: " + codigo);
+        }
+        Partida p = opt.get();
+
+        // Buscar jugador y ejecutar bajo lock del jugador
+        for (Jugador j : new ArrayList<>(p.getJugadores())) {
+            if (j.getId().equals(jugadorId)) {
+                return playerSyncService.runLocked(jugadorId, () -> {
+                    try { disconnectGraceService.cancel(jugadorId); } catch (Exception e) { }
+
+                    // remover jugador
+                    p.getJugadores().removeIf(x -> x.getId().equals(jugadorId));
+
+                    // reordenar órdenes para mantener secuencia (1..N)
+                    int orden = 1;
+                    for (Jugador rem : p.getJugadores()) {
+                        rem.setOrden(orden++);
+                    }
+
+                    partidaRepository.save(p);
+
+                    PartidaResponse partidaResp = new PartidaResponse(codigo, null, p.getJugadores());
+                    eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
+                    return partidaResp;
+                });
+            }
+        }
+
+        throw new BadRequestException("Jugador no encontrado en la partida: " + jugadorId);
+    }
     
     /**
      * Calcula el tiempo restante de la partida en segundos.

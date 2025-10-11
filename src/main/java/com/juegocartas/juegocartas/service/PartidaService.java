@@ -28,4 +28,15 @@ public interface PartidaService {
      * Reconecta a un jugador concreto por su jugadorId (útil cuando el cliente mantiene el jugadorId)
      */
     PartidaResponse reconectarPartidaPorJugadorId(String codigo, String jugadorId);
+
+    /**
+     * Permite a un jugador salir de la partida antes de que ésta inicie (lobby).
+     * Si se invoca sin especificar jugadorId (uso REST), se asumirá el usuario autenticado.
+     */
+    PartidaResponse salirPartida(String codigo);
+
+    /**
+     * Variante que permite especificar el jugadorId para expulsar/retirar a ese jugador.
+     */
+    PartidaResponse salirPartidaPorJugadorId(String codigo, String jugadorId);
 }
