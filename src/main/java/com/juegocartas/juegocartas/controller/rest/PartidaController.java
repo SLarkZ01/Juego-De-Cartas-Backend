@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.juegocartas.juegocartas.dto.request.CrearPartidaRequest;
+import com.juegocartas.juegocartas.dto.request.ReconectarRequest;
 import com.juegocartas.juegocartas.dto.request.UnirsePartidaRequest;
 import com.juegocartas.juegocartas.dto.response.ErrorResponse;
 import com.juegocartas.juegocartas.dto.response.PartidaDetailResponse;
@@ -123,5 +124,19 @@ public class PartidaController {
             @Parameter(description = "ID del jugador solicitante", example = "player-uuid-1234")
             @RequestParam String jugadorId) {
         return ResponseEntity.ok(partidaService.obtenerPartidaDetalle(codigo, jugadorId));
+    }
+
+    @Operation(summary = "Reconectar a una partida",
+               description = "Marca al jugador autenticado como conectado de nuevo en la partida. Si se pasa jugadorId en el body, lo utilizará para reconectar por jugadorId.")
+    @PostMapping("/{codigo}/reconectar")
+    public ResponseEntity<PartidaResponse> reconectar(
+            @Parameter(description = "Código único de la partida", example = "ABC123") @PathVariable String codigo,
+            @RequestBody(required = false) ReconectarRequest request) {
+
+        if (request != null && request.getJugadorId() != null) {
+            return ResponseEntity.ok(partidaService.reconectarPartidaPorJugadorId(codigo, request.getJugadorId()));
+        }
+
+        return ResponseEntity.ok(partidaService.reconectarPartida(codigo));
     }
 }

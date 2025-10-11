@@ -74,17 +74,12 @@ public class PartidaServiceImpl implements PartidaService {
 
         partidaRepository.save(p);
 
-        // publicar evento jugador unido
-        com.juegocartas.juegocartas.dto.event.JugadorUnidoEvent evt = 
-            new com.juegocartas.juegocartas.dto.event.JugadorUnidoEvent(
-                jugador.getId(), 
-                jugador.getNombre(), 
-                p.getJugadores().size(), 
-                p.getMaxJugadores()
-            );
-        eventPublisher.publish("/topic/partida/" + codigo, evt);
+        // Publicar el estado completo de la partida para que el frontend reciba
+        // la lista actualizada de jugadores y pueda sincronizar la vista.
+        PartidaResponse partidaResp = new PartidaResponse(codigo, jugador.getId(), p.getJugadores());
+        eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
 
-        return new PartidaResponse(codigo, jugador.getId(), p.getJugadores());
+        return partidaResp;
     }
 
     @Override
@@ -124,22 +119,17 @@ public class PartidaServiceImpl implements PartidaService {
         
         partidaRepository.save(p);
 
-        // publicar evento jugador unido
-        com.juegocartas.juegocartas.dto.event.JugadorUnidoEvent evt = 
-            new com.juegocartas.juegocartas.dto.event.JugadorUnidoEvent(
-                jugador.getId(), 
-                jugador.getNombre(), 
-                p.getJugadores().size(), 
-                p.getMaxJugadores()
-            );
-        eventPublisher.publish("/topic/partida/" + codigo, evt);
-        
+        // Publicar el estado completo de la partida para que el frontend reciba
+        // la lista actualizada de jugadores y pueda sincronizar la vista.
+        PartidaResponse partidaResp = new PartidaResponse(codigo, jugador.getId(), p.getJugadores());
+        eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
+
         // Auto-iniciar si se alcanzó el máximo de jugadores (7)
         if (p.getJugadores().size() == p.getMaxJugadores()) {
             gameService.iniciarPartida(codigo);
         }
 
-        return new PartidaResponse(codigo, jugador.getId(), p.getJugadores());
+        return partidaResp;
     }
 
     @Override
@@ -206,6 +196,53 @@ public class PartidaServiceImpl implements PartidaService {
             miJugador,
             tiempoRestante
         );
+    }
+
+    @Override
+    public PartidaResponse reconectarPartida(String codigo) {
+        Usuario usuario = obtenerUsuarioAutenticado();
+
+        Optional<Partida> opt = partidaRepository.findByCodigo(codigo);
+        if (opt.isEmpty()) {
+            throw new BadRequestException("Partida no encontrada: " + codigo);
+        }
+        Partida p = opt.get();
+
+        // Buscar jugador por userId
+        for (Jugador j : p.getJugadores()) {
+            if (j.getUserId().equals(usuario.getId())) {
+                j.setConectado(true);
+                partidaRepository.save(p);
+
+                PartidaResponse partidaResp = new PartidaResponse(codigo, j.getId(), p.getJugadores());
+                eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
+                return partidaResp;
+            }
+        }
+
+        throw new BadRequestException("Usuario no encontrado en la partida: " + codigo);
+    }
+
+    @Override
+    public PartidaResponse reconectarPartidaPorJugadorId(String codigo, String jugadorId) {
+        Optional<Partida> opt = partidaRepository.findByCodigo(codigo);
+        if (opt.isEmpty()) {
+            throw new BadRequestException("Partida no encontrada: " + codigo);
+        }
+        Partida p = opt.get();
+
+        for (Jugador j : p.getJugadores()) {
+            if (j.getId().equals(jugadorId)) {
+                j.setConectado(true);
+                partidaRepository.save(p);
+
+                PartidaResponse partidaResp = new PartidaResponse(codigo, j.getId(), p.getJugadores());
+                eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
+                return partidaResp;
+            }
+        }
+
+        throw new BadRequestException("Jugador no encontrado en la partida: " + jugadorId);
     }
     
     /**

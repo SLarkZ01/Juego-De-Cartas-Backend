@@ -1,5 +1,8 @@
 package com.juegocartas.juegocartas.controller.websocket;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -8,9 +11,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Listener para eventos de conexión/desconexión WebSocket.
@@ -26,6 +26,15 @@ public class WebSocketEventListener {
     
     // Mapa de sessionId -> jugadorId (se puede poblar desde headers si se envía info adicional)
     private final Map<String, String> sessionJugadorMap = new ConcurrentHashMap<>();
+
+    private final com.juegocartas.juegocartas.repository.PartidaRepository partidaRepository;
+    private final com.juegocartas.juegocartas.service.EventPublisher eventPublisher;
+
+    public WebSocketEventListener(com.juegocartas.juegocartas.repository.PartidaRepository partidaRepository,
+                                  com.juegocartas.juegocartas.service.EventPublisher eventPublisher) {
+        this.partidaRepository = partidaRepository;
+        this.eventPublisher = eventPublisher;
+    }
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
@@ -67,9 +76,27 @@ public class WebSocketEventListener {
         if (partidaCodigo != null) {
             logger.info("Cliente desconectado de partida: sessionId={}, partida={}, jugador={}", 
                        sessionId, partidaCodigo, jugadorId);
-            
-            // TODO: Aquí se podría marcar al jugador como desconectado en la partida
-            // y emitir un evento JUGADOR_DESCONECTADO si se implementa persistencia de sesiones
+
+            // Marcar jugador como desconectado en la partida persistida
+            try {
+                var opt = partidaRepository.findByCodigo(partidaCodigo);
+                if (opt.isPresent() && jugadorId != null) {
+                    com.juegocartas.juegocartas.model.Partida partida = opt.get();
+                    for (com.juegocartas.juegocartas.model.Jugador j : partida.getJugadores()) {
+                        if (jugadorId.equals(j.getId())) {
+                            j.setConectado(false);
+                            partidaRepository.save(partida);
+
+                            // Publicar estado actualizado de la partida
+                            eventPublisher.publish("/topic/partida/" + partidaCodigo,
+                                    new com.juegocartas.juegocartas.dto.response.PartidaResponse(partidaCodigo, j.getId(), partida.getJugadores()));
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error marcando jugador desconectado: {}", e.getMessage(), e);
+            }
         }
     }
     
@@ -80,6 +107,17 @@ public class WebSocketEventListener {
     public void registrarJugador(String sessionId, String jugadorId) {
         sessionJugadorMap.put(sessionId, jugadorId);
         logger.debug("Jugador {} registrado en sesión {}", jugadorId, sessionId);
+    }
+
+    /**
+     * Registra un jugador y asocia la sesión a una partida (si se conoce).
+     */
+    public void registrarJugadorEnPartida(String sessionId, String jugadorId, String partidaCodigo) {
+        registrarJugador(sessionId, jugadorId);
+        if (partidaCodigo != null) {
+            sessionPartidaMap.put(sessionId, partidaCodigo);
+            logger.debug("Sesión {} asociada a partida {} y jugador {}", sessionId, partidaCodigo, jugadorId);
+        }
     }
     
     /**
