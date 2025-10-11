@@ -38,15 +38,18 @@ public class PartidaServiceImpl implements PartidaService {
     private final com.juegocartas.juegocartas.service.EventPublisher eventPublisher;
     private final GameService gameService;
     private final com.juegocartas.juegocartas.service.DisconnectGraceService disconnectGraceService;
+    private final com.juegocartas.juegocartas.service.PlayerSyncService playerSyncService;
 
     public PartidaServiceImpl(PartidaRepository partidaRepository, 
                              com.juegocartas.juegocartas.service.EventPublisher eventPublisher,
                              GameService gameService,
-                             com.juegocartas.juegocartas.service.DisconnectGraceService disconnectGraceService) {
+                             com.juegocartas.juegocartas.service.DisconnectGraceService disconnectGraceService,
+                             com.juegocartas.juegocartas.service.PlayerSyncService playerSyncService) {
         this.partidaRepository = partidaRepository;
         this.eventPublisher = eventPublisher;
         this.gameService = gameService;
         this.disconnectGraceService = disconnectGraceService;
+        this.playerSyncService = playerSyncService;
     }
     
     /**
@@ -205,21 +208,20 @@ public class PartidaServiceImpl implements PartidaService {
     public PartidaResponse reconectarPartida(String codigo) {
         Usuario usuario = obtenerUsuarioAutenticado();
 
-        // Cancelar cualquier tarea pendiente de desconexión para este usuario
+        // Cancelar y persistir de forma sincronizada por jugadorId (evita races)
         try {
-            // buscar jugadorId en la partida y cancelar
             var optCancel = partidaRepository.findByCodigo(codigo);
             if (optCancel.isPresent()) {
                 var pCancel = optCancel.get();
                 for (Jugador j : pCancel.getJugadores()) {
                     if (j.getUserId().equals(usuario.getId())) {
-                        // cancelar grace
-                        try {
-                            // DisconnectGraceService inyectado/uso via campo (ver constructor)
-                            this.disconnectGraceService.cancel(j.getId());
-                        } catch (Exception ex) {
-                            // no crítico
-                        }
+                        final String jugadorId = j.getId();
+                        playerSyncService.runLockedVoid(jugadorId, () -> {
+                            try {
+                                disconnectGraceService.cancel(jugadorId);
+                            } catch (Exception ex) { }
+                            // marcar y persistir se hace más abajo cuando encontramos la partida real
+                        });
                         break;
                     }
                 }
@@ -234,15 +236,20 @@ public class PartidaServiceImpl implements PartidaService {
         }
         Partida p = opt.get();
 
-        // Buscar jugador por userId
+        // Buscar jugador por userId y realizar la acción de forma sincronizada por jugadorId
         for (Jugador j : p.getJugadores()) {
             if (j.getUserId().equals(usuario.getId())) {
-                j.setConectado(true);
-                partidaRepository.save(p);
+                final String jugadorId = j.getId();
+                return playerSyncService.runLocked(jugadorId, () -> {
+                    // cancelar cualquier tarea pendiente y marcar conectado atomically
+                    try { disconnectGraceService.cancel(jugadorId); } catch (Exception ex) { }
+                    j.setConectado(true);
+                    partidaRepository.save(p);
 
-                PartidaResponse partidaResp = new PartidaResponse(codigo, j.getId(), p.getJugadores());
-                eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
-                return partidaResp;
+                    PartidaResponse partidaResp = new PartidaResponse(codigo, j.getId(), p.getJugadores());
+                    eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
+                    return partidaResp;
+                });
             }
         }
 
@@ -259,15 +266,16 @@ public class PartidaServiceImpl implements PartidaService {
 
         for (Jugador j : p.getJugadores()) {
             if (j.getId().equals(jugadorId)) {
-                // Cancelar pending disconnect por si existiera
-                try { this.disconnectGraceService.cancel(jugadorId); } catch (Exception e) { }
+                // Ejecutar cancel + persist bajo lock del jugador
+                return playerSyncService.runLocked(jugadorId, () -> {
+                    try { disconnectGraceService.cancel(jugadorId); } catch (Exception e) { }
+                    j.setConectado(true);
+                    partidaRepository.save(p);
 
-                j.setConectado(true);
-                partidaRepository.save(p);
-
-                PartidaResponse partidaResp = new PartidaResponse(codigo, j.getId(), p.getJugadores());
-                eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
-                return partidaResp;
+                    PartidaResponse partidaResp = new PartidaResponse(codigo, j.getId(), p.getJugadores());
+                    eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
+                    return partidaResp;
+                });
             }
         }
 

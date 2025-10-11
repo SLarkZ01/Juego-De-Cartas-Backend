@@ -32,14 +32,17 @@ public class WebSocketEventListener {
     private final com.juegocartas.juegocartas.service.EventPublisher eventPublisher;
     private final com.juegocartas.juegocartas.service.DisconnectGraceService disconnectGraceService;
     private final long graceSeconds;
+    private final com.juegocartas.juegocartas.service.PlayerSyncService playerSyncService;
 
     public WebSocketEventListener(com.juegocartas.juegocartas.repository.PartidaRepository partidaRepository,
                                   com.juegocartas.juegocartas.service.EventPublisher eventPublisher,
                                   com.juegocartas.juegocartas.service.DisconnectGraceService disconnectGraceService,
+                                  com.juegocartas.juegocartas.service.PlayerSyncService playerSyncService,
                                   @Value("${app.disconnect.graceSeconds:5}") long graceSeconds) {
         this.partidaRepository = partidaRepository;
         this.eventPublisher = eventPublisher;
         this.disconnectGraceService = disconnectGraceService;
+        this.playerSyncService = playerSyncService;
         this.graceSeconds = graceSeconds;
     }
 
@@ -96,29 +99,31 @@ public class WebSocketEventListener {
             logger.info("Cliente desconectado (programando grace) sessionId={}, partida={}, jugador={}", 
                        sessionId, partidaCodigo, jugadorId);
 
-            // Programar el marcado como desconectado tras un grace period (configurable)
+            // Ejecutar la programación bajo lock por jugador para evitar races con cancelaciones
             String graceKey = jugadorId;
-            disconnectGraceService.scheduleDisconnect(graceKey, () -> {
-                try {
-                    var opt = partidaRepository.findByCodigo(partidaCodigo);
-                    if (opt.isPresent()) {
-                        com.juegocartas.juegocartas.model.Partida partida = opt.get();
-                        for (com.juegocartas.juegocartas.model.Jugador j : partida.getJugadores()) {
-                            if (jugadorId.equals(j.getId())) {
-                                j.setConectado(false);
-                                partidaRepository.save(partida);
+            playerSyncService.runLockedVoid(graceKey, () -> {
+                disconnectGraceService.scheduleDisconnect(graceKey, () -> {
+                    try {
+                        var opt = partidaRepository.findByCodigo(partidaCodigo);
+                        if (opt.isPresent()) {
+                            com.juegocartas.juegocartas.model.Partida partida = opt.get();
+                            for (com.juegocartas.juegocartas.model.Jugador j : partida.getJugadores()) {
+                                if (jugadorId.equals(j.getId())) {
+                                    j.setConectado(false);
+                                    partidaRepository.save(partida);
 
-                                // Publicar estado actualizado de la partida
-                                eventPublisher.publish("/topic/partida/" + partidaCodigo,
-                                        new com.juegocartas.juegocartas.dto.response.PartidaResponse(partidaCodigo, j.getId(), partida.getJugadores()));
-                                break;
+                                    // Publicar estado actualizado de la partida
+                                    eventPublisher.publish("/topic/partida/" + partidaCodigo,
+                                            new com.juegocartas.juegocartas.dto.response.PartidaResponse(partidaCodigo, j.getId(), partida.getJugadores()));
+                                    break;
+                                }
                             }
                         }
+                    } catch (Exception e) {
+                        logger.error("Error marcando jugador desconectado tras grace: {}", e.getMessage(), e);
                     }
-                } catch (Exception e) {
-                    logger.error("Error marcando jugador desconectado tras grace: {}", e.getMessage(), e);
-                }
-            }, this.graceSeconds);
+                }, this.graceSeconds);
+            });
         }
     }
     
@@ -127,11 +132,14 @@ public class WebSocketEventListener {
      * Este método podría ser llamado desde el controller cuando se identifica al jugador.
      */
     public void registrarJugador(String sessionId, String jugadorId) {
-        sessionJugadorMap.put(sessionId, jugadorId);
-        logger.debug("Jugador {} registrado en sesión {}", jugadorId, sessionId);
+        // Registrar y cancelar bajo lock para evitar race con la tarea programada
+        playerSyncService.runLockedVoid(jugadorId, () -> {
+            sessionJugadorMap.put(sessionId, jugadorId);
+            logger.debug("Jugador {} registrado en sesión {}", jugadorId, sessionId);
 
-        // Si había una tarea pendiente de desconexión, cancelarla (jugador reconectó rápido)
-        disconnectGraceService.cancel(jugadorId);
+            // Si había una tarea pendiente de desconexión, cancelarla (jugador reconectó rápido)
+            disconnectGraceService.cancel(jugadorId);
+        });
     }
 
     /**
