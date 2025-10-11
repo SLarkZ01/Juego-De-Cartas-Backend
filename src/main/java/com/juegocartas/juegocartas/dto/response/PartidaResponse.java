@@ -8,6 +8,7 @@ public class PartidaResponse {
     private String codigo;
     private String jugadorId;
     private List<Jugador> jugadores;
+    private boolean eliminada = false;
 
     public PartidaResponse() {}
 
@@ -15,6 +16,13 @@ public class PartidaResponse {
         this.codigo = codigo;
         this.jugadorId = jugadorId;
         this.jugadores = jugadores;
+    }
+
+    public PartidaResponse(String codigo, String jugadorId, List<Jugador> jugadores, boolean eliminada) {
+        this.codigo = codigo;
+        this.jugadorId = jugadorId;
+        this.jugadores = jugadores;
+        this.eliminada = eliminada;
     }
 
     public String getCodigo() {
@@ -39,5 +47,13 @@ public class PartidaResponse {
 
     public void setJugadores(List<Jugador> jugadores) {
         this.jugadores = jugadores;
+    }
+
+    public boolean isEliminada() {
+        return eliminada;
+    }
+
+    public void setEliminada(boolean eliminada) {
+        this.eliminada = eliminada;
     }
 }

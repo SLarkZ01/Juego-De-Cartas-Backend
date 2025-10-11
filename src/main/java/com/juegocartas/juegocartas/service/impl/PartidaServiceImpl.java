@@ -317,6 +317,24 @@ public class PartidaServiceImpl implements PartidaService {
                 return playerSyncService.runLocked(jugadorId, () -> {
                     try { disconnectGraceService.cancel(jugadorId); } catch (Exception e) { }
 
+                    // Si el jugador que sale es el creador (orden == 1) y la partida está en espera,
+                    // eliminamos la partida por completo y notificamos con eliminada=true
+                    boolean isCreador = j.getOrden() == 1;
+                    if (isCreador && "EN_ESPERA".equals(p.getEstado())) {
+                        // Notificar a los clientes que la partida fue eliminada
+                        PartidaResponse partidaResp = new PartidaResponse(codigo, jugadorId, null, true);
+                        eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
+
+                        // Borrar la partida de la BD
+                        try {
+                            partidaRepository.delete(p);
+                        } catch (Exception ex) {
+                            // Log y seguir
+                        }
+
+                        return partidaResp;
+                    }
+
                     // remover jugador
                     p.getJugadores().removeIf(x -> x.getId().equals(jugadorId));
 
