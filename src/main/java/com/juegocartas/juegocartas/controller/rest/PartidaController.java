@@ -145,6 +145,15 @@ public class PartidaController {
         return ResponseEntity.ok(partidaService.reconectarPartida(codigo));
     }
 
+    @Operation(summary = "Reconexión automática",
+               description = "Detecta si el usuario autenticado pertenece a una partida en estado EN_ESPERA y lo reconecta automáticamente. Retorna 200 con PartidaResponse si se reconectó, 204 si no había ninguna partida en espera.")
+    @PostMapping("/reconectar-automatica")
+    public ResponseEntity<PartidaResponse> reconectarAutomatica() {
+        PartidaResponse resp = partidaService.reconectarAPartidaEnEspera();
+        if (resp == null) return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(resp);
+    }
+
     @PostMapping("/{codigo}/salir")
     @Operation(summary = "Salir de la partida (lobby)", description = "Permite al jugador autenticado salir de la partida antes de que inicie. Publica el estado actualizado en el topic de la partida.")
     public ResponseEntity<PartidaResponse> salir(

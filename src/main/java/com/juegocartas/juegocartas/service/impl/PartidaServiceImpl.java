@@ -294,6 +294,37 @@ public class PartidaServiceImpl implements PartidaService {
     }
 
     @Override
+    public PartidaResponse reconectarAPartidaEnEspera() {
+        Usuario usuario = obtenerUsuarioAutenticado();
+
+        // Buscar en la DB una partida en EN_ESPERA que contenga al usuario por su userId
+        try {
+            var partes = partidaRepository.findAll();
+            for (var p : partes) {
+                if (!"EN_ESPERA".equals(p.getEstado())) continue;
+                for (Jugador j : p.getJugadores()) {
+                    if (j.getUserId() != null && j.getUserId().equals(usuario.getId())) {
+                        final String jugadorId = j.getId();
+                        return playerSyncService.runLocked(jugadorId, () -> {
+                            try { disconnectGraceService.cancel(jugadorId); } catch (Exception ex) { }
+                            j.setConectado(true);
+                            partidaRepository.save(p);
+
+                            PartidaResponse partidaResp = new PartidaResponse(p.getCodigo(), j.getId(), p.getJugadores());
+                            eventPublisher.publish("/topic/partida/" + p.getCodigo(), partidaResp);
+                            return partidaResp;
+                        });
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // si ocurre un error, devolver null para que el controlador lo trate como "no hay partida"
+        }
+
+        return null;
+    }
+
+    @Override
     public PartidaResponse salirPartida(String codigo) {
         Usuario usuario = obtenerUsuarioAutenticado();
 
@@ -331,7 +362,9 @@ public class PartidaServiceImpl implements PartidaService {
                     // Si el jugador que sale es el creador (orden == 1) y la partida está en espera,
                     // eliminamos la partida por completo y notificamos con eliminada=true
                     boolean isCreador = j.getOrden() == 1;
-                    if (isCreador && "EN_ESPERA".equals(p.getEstado())) {
+
+                    // If the creator leaves, delete the partida regardless of its state (EN_ESPERA or EN_CURSO)
+                    if (isCreador) {
                         // Notificar a los clientes que la partida fue eliminada
                         PartidaResponse partidaResp = new PartidaResponse(codigo, jugadorId, null, true);
                         eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
@@ -346,13 +379,63 @@ public class PartidaServiceImpl implements PartidaService {
                         return partidaResp;
                     }
 
+                    // For non-creator leaving during an active game, remove the player and
+                    // adjust game state so remaining players can continue.
+                    // Compute next turno if the leaving player had the current turn.
+                    String nextTurnIfNeeded = null;
+                    if (p.getTurnoActual() != null && p.getTurnoActual().equals(jugadorId)) {
+                        // Determine next player before removal
+                        List<Jugador> ordenados = new ArrayList<>(p.getJugadores());
+                        ordenados.sort((a, b) -> Integer.compare(a.getOrden(), b.getOrden()));
+                        int idx = -1;
+                        for (int ii = 0; ii < ordenados.size(); ii++) {
+                            if (ordenados.get(ii).getId().equals(jugadorId)) { idx = ii; break; }
+                        }
+                        if (idx >= 0 && ordenados.size() > 1) {
+                            int nextIdx = (idx + 1) % ordenados.size();
+                            // if next player is the same (only one), we'll handle later
+                            if (ordenados.get(nextIdx).getId().equals(jugadorId)) {
+                                nextTurnIfNeeded = null;
+                            } else {
+                                nextTurnIfNeeded = ordenados.get(nextIdx).getId();
+                            }
+                        }
+                    }
+
+                    // limpiar cartas en mesa del jugador que se va
+                    try {
+                        if (p.getCartasEnMesa() != null) {
+                            p.getCartasEnMesa().removeIf(c -> c.getJugadorId().equals(jugadorId));
+                        }
+                    } catch (Exception ex) { }
+
                     // remover jugador
                     p.getJugadores().removeIf(x -> x.getId().equals(jugadorId));
+
+                    // Si ya no quedan jugadores, eliminar la partida
+                    if (p.getJugadores().isEmpty()) {
+                        PartidaResponse partidaResp = new PartidaResponse(codigo, jugadorId, null, true);
+                        eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
+                        try { partidaRepository.delete(p); } catch (Exception ex) { }
+                        return partidaResp;
+                    }
 
                     // reordenar órdenes para mantener secuencia (1..N)
                     int orden = 1;
                     for (Jugador rem : p.getJugadores()) {
                         rem.setOrden(orden++);
+                    }
+
+                    // ajustar turno si correspondía al jugador que se fue
+                    if (nextTurnIfNeeded != null) {
+                        p.setTurnoActual(nextTurnIfNeeded);
+                    } else if (p.getTurnoActual() != null && p.getTurnoActual().equals(jugadorId)) {
+                        // Si no determinamos un siguiente (por ejemplo sólo quedaba uno), asignar al primer jugador
+                        if (!p.getJugadores().isEmpty()) {
+                            p.setTurnoActual(p.getJugadores().get(0).getId());
+                        } else {
+                            p.setTurnoActual(null);
+                        }
                     }
 
                     partidaRepository.save(p);

@@ -133,6 +133,39 @@ await fetch(`/api/partidas/${codigo}/reconectar`, { method: 'POST', headers: {'C
 
 Usar `/unirse` es conveniente porque simplifica la UX (crear/unirse actúan de forma idempotente si ya existes en la partida).
 
+## Nuevo: Reconexión automática en login
+
+El backend ahora ofrece un endpoint específico para el flujo de login: `POST /api/partidas/reconectar-automatica`.
+
+- Propósito: cuando el usuario inicia sesión (desde cualquier dispositivo o navegador), el frontend puede llamar a este endpoint para que el backend busque automáticamente si ese usuario pertenece a alguna partida en estado `EN_ESPERA` y, si existe, re-conecte al jugador (marca `conectado=true`) y publique el estado de la partida. Esto evita que el usuario cree una nueva partida mientras tiene otra abierta pero desconectada.
+
+Ejemplo de uso al iniciar sesión (pseudocódigo):
+
+```js
+// Al completar login exitoso
+async function onLoginSuccess() {
+  try {
+    const resp = await fetch('/api/partidas/reconectar-automatica', { method: 'POST' });
+    if (resp.status === 200) {
+      const partida = await resp.json();
+      // Guardar datos y redirigir automáticamente al lobby/partida
+      localStorage.setItem('partidaCodigo', partida.codigo);
+      localStorage.setItem('jugadorId', partida.jugadorId);
+      router.push(`/partida/${partida.codigo}`);
+      return;
+    }
+
+    // 204 No Content -> no tenía partida en espera; continuar con flujo normal
+  } catch (err) {
+    console.error('Error reconectar automática:', err);
+  }
+
+  // Continuar con flujo normal del usuario (lobby, crear/join manual)
+}
+```
+
+Uso recomendado: llamar a este endpoint justo después del login exitoso. Si se reconecta, redirigir al usuario a la partida detectada y abrir la conexión WebSocket desde ahí.
+
 ## Recomendaciones finales
 
 - Mantén `jugadorId` y `partidaCodigo` en `localStorage` y úsalo para intentos automáticos de reconexión.

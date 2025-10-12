@@ -30,6 +30,13 @@ public interface PartidaService {
     PartidaResponse reconectarPartidaPorJugadorId(String codigo, String jugadorId);
 
     /**
+     * Busca si el usuario autenticado pertenece a alguna partida en estado EN_ESPERA
+     * y, de encontrarla, lo reconecta automáticamente (marca conectado=true y publica el estado).
+     * Retorna la PartidaResponse si se reconectó, o null si no encontró ninguna partida pendiente.
+     */
+    PartidaResponse reconectarAPartidaEnEspera();
+
+    /**
      * Permite a un jugador salir de la partida antes de que ésta inicie (lobby).
      * Si se invoca sin especificar jugadorId (uso REST), se asumirá el usuario autenticado.
      */
