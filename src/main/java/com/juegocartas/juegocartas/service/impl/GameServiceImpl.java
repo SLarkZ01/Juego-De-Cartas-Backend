@@ -100,6 +100,9 @@ public class GameServiceImpl implements GameService {
         );
     eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
 
+    // Publicar conteo inicial de cartas
+    publishCardCounts(p);
+
         return p;
     }
 
@@ -186,6 +189,9 @@ public class GameServiceImpl implements GameService {
                 carta != null ? carta.getImagenUrl() : ""
             );
         eventPublisher.publish("/topic/partida/" + p.getCodigo(), eventoCarta);
+
+        // Publicar conteo actualizado de cartas (el jugador actual redujo su cantidad)
+        publishCardCounts(p);
 
         // si todos los jugadores con cartas jugaron, resolver ronda
         long jugadoresActivos = p.getJugadores().stream().filter(j -> j.getNumeroCartas() > 0).count();
@@ -366,6 +372,9 @@ public class GameServiceImpl implements GameService {
             empate
         );
     eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
+
+    // Publicar conteo actualizado de cartas (redistribución tras ronda)
+    publishCardCounts(p);
     }
 
     private void verificarFinDeJuego(Partida p) {
@@ -470,5 +479,36 @@ public class GameServiceImpl implements GameService {
         
         partidaRepository.save(p);
         eventPublisher.publish("/topic/partida/" + p.getCodigo(), evento);
+    }
+
+    /**
+     * Publica un evento con el conteo actual de cartas de todos los jugadores.
+     * Permite a los clientes actualizar la UI en tiempo real sin revelar las cartas.
+     * 
+     * @param p partida con los jugadores actualizados
+     */
+    private void publishCardCounts(Partida p) {
+        try {
+            java.util.List<com.juegocartas.juegocartas.dto.event.CardCountEvent.JugadorCardCount> counts = 
+                new java.util.ArrayList<>();
+            
+            for (Jugador j : p.getJugadores()) {
+                counts.add(new com.juegocartas.juegocartas.dto.event.CardCountEvent.JugadorCardCount(
+                    j.getId(),
+                    j.getNombre(),
+                    j.getNumeroCartas(),
+                    j.getOrden()
+                ));
+            }
+            
+            com.juegocartas.juegocartas.dto.event.CardCountEvent evento = 
+                new com.juegocartas.juegocartas.dto.event.CardCountEvent(counts);
+            
+            eventPublisher.publish("/topic/partida/" + p.getCodigo() + "/counts", evento);
+            
+            log.debug("Published card counts for partida {}: {} jugadores", p.getCodigo(), counts.size());
+        } catch (Exception e) {
+            log.error("Error publishing card counts for partida {}: {}", p.getCodigo(), e.getMessage(), e);
+        }
     }
 }

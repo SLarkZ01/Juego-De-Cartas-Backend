@@ -65,18 +65,23 @@ public class WebSocketEventListener {
         
         logger.info("Suscripción WebSocket: sessionId={}, destination={}", sessionId, destination);
         
-        // Si la suscripción es a /topic/partida/{codigo}, extraer el código
+        // Si la suscripción es a /topic/partida/{codigo} o a subtopics como
+        // /topic/partida/{codigo}/counts o /topic/partida/{codigo}/drag,
+        // extraer sólo el código de partida (segmento inmediatamente después)
         if (destination != null && destination.startsWith("/topic/partida/")) {
-            String partidaCodigo = destination.substring("/topic/partida/".length());
+            String rest = destination.substring("/topic/partida/".length());
+            String partidaCodigo = rest.contains("/") ? rest.substring(0, rest.indexOf('/')) : rest;
+            // almacenar sólo el código de partida (sin subpaths)
             sessionPartidaMap.put(sessionId, partidaCodigo);
-            logger.info("Cliente {} suscrito a partida {}", sessionId, partidaCodigo);
+            logger.info("Cliente {} suscrito a partida {} (raw destination={})", sessionId, partidaCodigo, destination);
 
-            // Publicar el estado actual de la partida para sincronizar al nuevo suscriptor
+            // Publicar el estado actual de la partida al topic principal /topic/partida/{codigo}
             try {
                 var opt = partidaRepository.findByCodigo(partidaCodigo);
                 if (opt.isPresent()) {
                     var partida = opt.get();
                     var partidaResp = new com.juegocartas.juegocartas.dto.response.PartidaResponse(partidaCodigo, null, partida.getJugadores());
+                    // siempre publicar en el topic principal, no en subtopics (evita mensajes inesperados en /counts, /drag, etc.)
                     eventPublisher.publish("/topic/partida/" + partidaCodigo, partidaResp);
                 }
             } catch (Exception e) {
