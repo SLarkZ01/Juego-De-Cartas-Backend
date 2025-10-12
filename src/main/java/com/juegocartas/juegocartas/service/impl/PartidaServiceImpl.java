@@ -108,11 +108,22 @@ public class PartidaServiceImpl implements PartidaService {
             throw new BadRequestException("La partida está llena. Máximo " + p.getMaxJugadores() + " jugadores.");
         }
         
-        // Validar que el usuario no esté ya en la partida
-        boolean yaEnPartida = p.getJugadores().stream()
-            .anyMatch(j -> j.getUserId().equals(usuario.getId()));
-        if (yaEnPartida) {
-            throw new BadRequestException("Ya estás en esta partida");
+        // Validar si el usuario ya está en la partida.
+        // Si está presente pero desconectado, permitimos "reconectar" al unirse: marcamos conectado=true
+        for (Jugador existente : p.getJugadores()) {
+            if (existente.getUserId().equals(usuario.getId())) {
+                // Ya existe un jugador para este usuario: tratarlo como reconexión/idempotencia.
+                final String jugadorIdExistente = existente.getId();
+                return playerSyncService.runLocked(jugadorIdExistente, () -> {
+                    try { disconnectGraceService.cancel(jugadorIdExistente); } catch (Exception e) { }
+                    existente.setConectado(true);
+                    partidaRepository.save(p);
+
+                    PartidaResponse partidaResp = new PartidaResponse(codigo, existente.getId(), p.getJugadores());
+                    eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
+                    return partidaResp;
+                });
+            }
         }
         
         // Crear jugador con orden secuencial
