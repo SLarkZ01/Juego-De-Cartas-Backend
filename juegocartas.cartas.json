@@ -1,0 +1,544 @@
+[{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca08"
+  },
+  "codigo": "1A",
+  "nombre": "DB_1A",
+  "atributos": {
+    "poder": 5000,
+    "defensa": 3000,
+    "ki": 4500,
+    "transformaciones": 1,
+    "velocidad": 4000
+  },
+  "tematica": "dragon_ball",
+  "paquete": 1,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca09"
+  },
+  "codigo": "1B",
+  "nombre": "DB_1B",
+  "atributos": {
+    "poder": 5010,
+    "defensa": 3004,
+    "ki": 4507,
+    "transformaciones": 2,
+    "velocidad": 4005
+  },
+  "tematica": "dragon_ball",
+  "paquete": 1,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca0a"
+  },
+  "codigo": "1C",
+  "nombre": "DB_1C",
+  "atributos": {
+    "poder": 5020,
+    "defensa": 3008,
+    "ki": 4514,
+    "transformaciones": 3,
+    "velocidad": 4010
+  },
+  "tematica": "dragon_ball",
+  "paquete": 1,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca0b"
+  },
+  "codigo": "1D",
+  "nombre": "DB_1D",
+  "atributos": {
+    "poder": 5030,
+    "defensa": 3012,
+    "ki": 4521,
+    "transformaciones": 1,
+    "velocidad": 4015
+  },
+  "tematica": "dragon_ball",
+  "paquete": 1,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca0c"
+  },
+  "codigo": "1E",
+  "nombre": "DB_1E",
+  "atributos": {
+    "poder": 5040,
+    "defensa": 3016,
+    "ki": 4528,
+    "transformaciones": 2,
+    "velocidad": 4020
+  },
+  "tematica": "dragon_ball",
+  "paquete": 1,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca0d"
+  },
+  "codigo": "1F",
+  "nombre": "DB_1F",
+  "atributos": {
+    "poder": 5050,
+    "defensa": 3020,
+    "ki": 4535,
+    "transformaciones": 3,
+    "velocidad": 4025
+  },
+  "tematica": "dragon_ball",
+  "paquete": 1,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca0e"
+  },
+  "codigo": "1G",
+  "nombre": "DB_1G",
+  "atributos": {
+    "poder": 5060,
+    "defensa": 3024,
+    "ki": 4542,
+    "transformaciones": 1,
+    "velocidad": 4030
+  },
+  "tematica": "dragon_ball",
+  "paquete": 1,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca0f"
+  },
+  "codigo": "1H",
+  "nombre": "DB_1H",
+  "atributos": {
+    "poder": 5070,
+    "defensa": 3028,
+    "ki": 4549,
+    "transformaciones": 2,
+    "velocidad": 4035
+  },
+  "tematica": "dragon_ball",
+  "paquete": 1,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca10"
+  },
+  "codigo": "2A",
+  "nombre": "DB_2A",
+  "atributos": {
+    "poder": 5080,
+    "defensa": 3032,
+    "ki": 4556,
+    "transformaciones": 3,
+    "velocidad": 4040
+  },
+  "tematica": "dragon_ball",
+  "paquete": 2,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca11"
+  },
+  "codigo": "2B",
+  "nombre": "DB_2B",
+  "atributos": {
+    "poder": 5090,
+    "defensa": 3036,
+    "ki": 4563,
+    "transformaciones": 1,
+    "velocidad": 4045
+  },
+  "tematica": "dragon_ball",
+  "paquete": 2,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca12"
+  },
+  "codigo": "2C",
+  "nombre": "DB_2C",
+  "atributos": {
+    "poder": 5100,
+    "defensa": 3040,
+    "ki": 4570,
+    "transformaciones": 2,
+    "velocidad": 4050
+  },
+  "tematica": "dragon_ball",
+  "paquete": 2,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca13"
+  },
+  "codigo": "2D",
+  "nombre": "DB_2D",
+  "atributos": {
+    "poder": 5110,
+    "defensa": 3044,
+    "ki": 4577,
+    "transformaciones": 3,
+    "velocidad": 4055
+  },
+  "tematica": "dragon_ball",
+  "paquete": 2,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca14"
+  },
+  "codigo": "2E",
+  "nombre": "DB_2E",
+  "atributos": {
+    "poder": 5120,
+    "defensa": 3048,
+    "ki": 4584,
+    "transformaciones": 1,
+    "velocidad": 4060
+  },
+  "tematica": "dragon_ball",
+  "paquete": 2,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca15"
+  },
+  "codigo": "2F",
+  "nombre": "DB_2F",
+  "atributos": {
+    "poder": 5130,
+    "defensa": 3052,
+    "ki": 4591,
+    "transformaciones": 2,
+    "velocidad": 4065
+  },
+  "tematica": "dragon_ball",
+  "paquete": 2,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca16"
+  },
+  "codigo": "2G",
+  "nombre": "DB_2G",
+  "atributos": {
+    "poder": 5140,
+    "defensa": 3056,
+    "ki": 4598,
+    "transformaciones": 3,
+    "velocidad": 4070
+  },
+  "tematica": "dragon_ball",
+  "paquete": 2,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca17"
+  },
+  "codigo": "2H",
+  "nombre": "DB_2H",
+  "atributos": {
+    "poder": 5150,
+    "defensa": 3060,
+    "ki": 4605,
+    "transformaciones": 1,
+    "velocidad": 4075
+  },
+  "tematica": "dragon_ball",
+  "paquete": 2,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca18"
+  },
+  "codigo": "3A",
+  "nombre": "DB_3A",
+  "atributos": {
+    "poder": 5160,
+    "defensa": 3064,
+    "ki": 4612,
+    "transformaciones": 2,
+    "velocidad": 4080
+  },
+  "tematica": "dragon_ball",
+  "paquete": 3,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca19"
+  },
+  "codigo": "3B",
+  "nombre": "DB_3B",
+  "atributos": {
+    "poder": 5170,
+    "defensa": 3068,
+    "ki": 4619,
+    "transformaciones": 3,
+    "velocidad": 4085
+  },
+  "tematica": "dragon_ball",
+  "paquete": 3,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca1a"
+  },
+  "codigo": "3C",
+  "nombre": "DB_3C",
+  "atributos": {
+    "poder": 5180,
+    "defensa": 3072,
+    "ki": 4626,
+    "transformaciones": 1,
+    "velocidad": 4090
+  },
+  "tematica": "dragon_ball",
+  "paquete": 3,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca1b"
+  },
+  "codigo": "3D",
+  "nombre": "DB_3D",
+  "atributos": {
+    "poder": 5190,
+    "defensa": 3076,
+    "ki": 4633,
+    "transformaciones": 2,
+    "velocidad": 4095
+  },
+  "tematica": "dragon_ball",
+  "paquete": 3,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca1c"
+  },
+  "codigo": "3E",
+  "nombre": "DB_3E",
+  "atributos": {
+    "poder": 5200,
+    "defensa": 3080,
+    "ki": 4640,
+    "transformaciones": 3,
+    "velocidad": 4100
+  },
+  "tematica": "dragon_ball",
+  "paquete": 3,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca1d"
+  },
+  "codigo": "3F",
+  "nombre": "DB_3F",
+  "atributos": {
+    "poder": 5210,
+    "defensa": 3084,
+    "ki": 4647,
+    "transformaciones": 1,
+    "velocidad": 4105
+  },
+  "tematica": "dragon_ball",
+  "paquete": 3,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca1e"
+  },
+  "codigo": "3G",
+  "nombre": "DB_3G",
+  "atributos": {
+    "poder": 5220,
+    "defensa": 3088,
+    "ki": 4654,
+    "transformaciones": 2,
+    "velocidad": 4110
+  },
+  "tematica": "dragon_ball",
+  "paquete": 3,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca1f"
+  },
+  "codigo": "3H",
+  "nombre": "DB_3H",
+  "atributos": {
+    "poder": 5230,
+    "defensa": 3092,
+    "ki": 4661,
+    "transformaciones": 3,
+    "velocidad": 4115
+  },
+  "tematica": "dragon_ball",
+  "paquete": 3,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca20"
+  },
+  "codigo": "4A",
+  "nombre": "DB_4A",
+  "atributos": {
+    "poder": 5240,
+    "defensa": 3096,
+    "ki": 4668,
+    "transformaciones": 1,
+    "velocidad": 4120
+  },
+  "tematica": "dragon_ball",
+  "paquete": 4,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca21"
+  },
+  "codigo": "4B",
+  "nombre": "DB_4B",
+  "atributos": {
+    "poder": 5250,
+    "defensa": 3100,
+    "ki": 4675,
+    "transformaciones": 2,
+    "velocidad": 4125
+  },
+  "tematica": "dragon_ball",
+  "paquete": 4,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca22"
+  },
+  "codigo": "4C",
+  "nombre": "DB_4C",
+  "atributos": {
+    "poder": 5260,
+    "defensa": 3104,
+    "ki": 4682,
+    "transformaciones": 3,
+    "velocidad": 4130
+  },
+  "tematica": "dragon_ball",
+  "paquete": 4,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca23"
+  },
+  "codigo": "4D",
+  "nombre": "DB_4D",
+  "atributos": {
+    "poder": 5270,
+    "defensa": 3108,
+    "ki": 4689,
+    "transformaciones": 1,
+    "velocidad": 4135
+  },
+  "tematica": "dragon_ball",
+  "paquete": 4,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca24"
+  },
+  "codigo": "4E",
+  "nombre": "DB_4E",
+  "atributos": {
+    "poder": 5280,
+    "defensa": 3112,
+    "ki": 4696,
+    "transformaciones": 2,
+    "velocidad": 4140
+  },
+  "tematica": "dragon_ball",
+  "paquete": 4,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca25"
+  },
+  "codigo": "4F",
+  "nombre": "DB_4F",
+  "atributos": {
+    "poder": 5290,
+    "defensa": 3116,
+    "ki": 4703,
+    "transformaciones": 3,
+    "velocidad": 4145
+  },
+  "tematica": "dragon_ball",
+  "paquete": 4,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca26"
+  },
+  "codigo": "4G",
+  "nombre": "DB_4G",
+  "atributos": {
+    "poder": 5300,
+    "defensa": 3120,
+    "ki": 4710,
+    "transformaciones": 1,
+    "velocidad": 4150
+  },
+  "tematica": "dragon_ball",
+  "paquete": 4,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+},
+{
+  "_id": {
+    "$oid": "68eb2bef5298fc57f0f0ca27"
+  },
+  "codigo": "4H",
+  "nombre": "DB_4H",
+  "atributos": {
+    "poder": 5310,
+    "defensa": 3124,
+    "ki": 4717,
+    "transformaciones": 2,
+    "velocidad": 4155
+  },
+  "tematica": "dragon_ball",
+  "paquete": 4,
+  "_class": "com.juegocartas.juegocartas.model.Carta"
+}]
