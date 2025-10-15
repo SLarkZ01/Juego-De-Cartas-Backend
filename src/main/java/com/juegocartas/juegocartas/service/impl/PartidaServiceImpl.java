@@ -449,6 +449,51 @@ public class PartidaServiceImpl implements PartidaService {
 
         throw new BadRequestException("Jugador no encontrado en la partida: " + jugadorId);
     }
+
+    @Override
+    public PartidaResponse reorderMano(String codigo, String jugadorId, com.juegocartas.juegocartas.dto.request.ReorderHandRequest request) {
+        Optional<Partida> opt = partidaRepository.findByCodigo(codigo);
+        if (opt.isEmpty()) throw new BadRequestException("Partida no encontrada: " + codigo);
+        Partida p = opt.get();
+
+        // Buscar jugador
+        for (Jugador j : p.getJugadores()) {
+            if (j.getId().equals(jugadorId)) {
+                final Jugador jugador = j;
+                return playerSyncService.runLocked(jugadorId, () -> {
+                    // Validar request
+                    var newOrder = request != null ? request.getOrder() : null;
+                    if (newOrder == null) throw new BadRequestException("Order vacío");
+
+                    var current = jugador.getCartasEnMano();
+                    if (current == null) throw new BadRequestException("Jugador sin mano");
+
+                    // Validar misma colección (size y set equality)
+                    if (newOrder.size() != current.size()) {
+                        throw new BadRequestException("El nuevo orden no contiene la misma cantidad de cartas");
+                    }
+                    java.util.Set<String> setNew = new java.util.HashSet<>(newOrder);
+                    java.util.Set<String> setCurr = new java.util.HashSet<>(current);
+                    if (!setNew.equals(setCurr)) {
+                        throw new BadRequestException("El nuevo orden debe contener exactamente las mismas cartas");
+                    }
+
+                    // Aplicar nuevo orden
+                    jugador.setCartasEnMano(new java.util.ArrayList<>(newOrder));
+                    jugador.setNumeroCartas(jugador.getCartasEnMano().size());
+                    jugador.setCartaActual(jugador.getCartasEnMano().isEmpty() ? null : jugador.getCartasEnMano().get(0));
+
+                    partidaRepository.save(p);
+
+                    PartidaResponse partidaResp = new PartidaResponse(codigo, jugadorId, p.getJugadores());
+                    eventPublisher.publish("/topic/partida/" + codigo, partidaResp);
+                    return partidaResp;
+                });
+            }
+        }
+
+        throw new BadRequestException("Jugador no encontrado en la partida: " + jugadorId);
+    }
     
     /**
      * Calcula el tiempo restante de la partida en segundos.

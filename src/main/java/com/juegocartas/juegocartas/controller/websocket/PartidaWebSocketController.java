@@ -9,6 +9,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Controller;
 
 import com.juegocartas.juegocartas.dto.event.PlayerDragEvent;
+import com.juegocartas.juegocartas.dto.event.ServerErrorEvent;
 import com.juegocartas.juegocartas.dto.request.ReconectarRequest;
 import com.juegocartas.juegocartas.service.DragValidationService;
 import com.juegocartas.juegocartas.service.EventPublisher;
@@ -25,15 +26,18 @@ public class PartidaWebSocketController {
     private final com.juegocartas.juegocartas.service.PartidaService partidaService;
     private final DragValidationService dragValidationService;
     private final EventPublisher eventPublisher;
+    private final com.juegocartas.juegocartas.service.GameService gameService;
 
     public PartidaWebSocketController(WebSocketEventListener wsListener,
                                       com.juegocartas.juegocartas.service.PartidaService partidaService,
                                       DragValidationService dragValidationService,
-                                      EventPublisher eventPublisher) {
+                                      EventPublisher eventPublisher,
+                                      com.juegocartas.juegocartas.service.GameService gameService) {
         this.wsListener = wsListener;
         this.partidaService = partidaService;
         this.dragValidationService = dragValidationService;
         this.eventPublisher = eventPublisher;
+        this.gameService = gameService;
     }
 
     /**
@@ -114,6 +118,28 @@ public class PartidaWebSocketController {
 
             logger.debug("Drag event published: jugador={}, partida={}, dragging={}", 
                     jugadorId, partidaCodigo, event.isDragging());
+
+            // Si el evento es un drop en la mesa (target == "mesa" y dragging == false)
+            // interpretarlo como intención de jugar la carta: invocar gameService.jugarCarta
+            try {
+                if (event.getTarget() != null && "mesa".equalsIgnoreCase(event.getTarget()) && !event.isDragging()) {
+                    // Llamada al servicio de juego; el servicio validará orden, atributo y existencia de cartas
+                    gameService.jugarCarta(partidaCodigo, jugadorId);
+                }
+            } catch (Exception e) {
+                // Enviar al jugador un mensaje dirigido con el error para que el cliente pueda mostrar feedback
+                try {
+                    String userDestination = "/queue/partida/" + partidaCodigo + "/errors";
+                    ServerErrorEvent err = new ServerErrorEvent("PLAY_ERROR", e.getMessage(), null);
+                    // publishToUser enviará a /user/{jugadorId}{userDestination} internamente
+                    eventPublisher.publishToUser(jugadorId, userDestination, err);
+                } catch (Exception ex) {
+                    logger.warn("Error publicando mensaje de error al usuario tras fallo en jugarCarta: {}", ex.getMessage());
+                }
+
+                // No interrumpir el flujo de drag; loggear el error para diagnóstico.
+                logger.warn("Error intentando jugar carta por drop en mesa: {}", e.getMessage());
+            }
 
         } catch (Exception e) {
             logger.error("Error handling drag event: {}", e.getMessage(), e);

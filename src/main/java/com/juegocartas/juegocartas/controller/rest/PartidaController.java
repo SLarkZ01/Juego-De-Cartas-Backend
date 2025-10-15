@@ -160,4 +160,62 @@ public class PartidaController {
             @Parameter(description = "Código único de la partida", example = "ABC123") @PathVariable String codigo) {
         return ResponseEntity.ok(partidaService.salirPartida(codigo));
     }
+
+    @PostMapping("/{codigo}/mano/reorder")
+    @Operation(summary = "Reordenar la mano del jugador",
+               description = "Permite al jugador persistir el nuevo orden de su mano. Se valida que la colección sea la misma.")
+    public ResponseEntity<com.juegocartas.juegocartas.dto.response.PartidaResponse> reorderMano(
+            @Parameter(description = "Código único de la partida", example = "ABC123") @PathVariable String codigo,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Nuevo orden de cartas")
+            @RequestBody com.juegocartas.juegocartas.dto.request.ReorderHandRequest request) {
+        // Obtener jugador autenticado (se delega a PartidaService para validación por jugadorId)
+        // Asumimos que el servicio obtiene el jugador mediante SecurityContext o el request contiene jugadorId en contexto.
+        // En este método asumimos que el jugador autenticado quiere reordenar su propia mano. Buscaremos su jugadorId en la Partida.
+
+        // Obtener partida y buscar jugador por userId del autenticado
+        var user = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String jugadorId = null;
+        try {
+            // Si el principal es de tipo Usuario, buscar el jugadorId en la partida
+            if (user instanceof com.juegocartas.juegocartas.model.Usuario) {
+                String userId = ((com.juegocartas.juegocartas.model.Usuario) user).getId();
+                var optional = partidaService.obtenerPartidaDetalle(codigo, null);
+                // obtenerPartidaDetalle requiere jugadorId; en este contexto usaremos la búsqueda manual
+                // Simplificamos: buscar en la BD directamente desde el servicio de partidas
+            }
+        } catch (Exception e) {
+            // ignorar y gestionar abajo
+        }
+
+        // Determinar jugadorId automáticamente desde el usuario autenticado
+        Object principal = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userId = null;
+        if (principal instanceof com.juegocartas.juegocartas.model.Usuario) {
+            userId = ((com.juegocartas.juegocartas.model.Usuario) principal).getId();
+        }
+
+        if (userId == null) {
+            throw new IllegalArgumentException("Usuario no autenticado o no disponible para determinar jugadorId");
+        }
+
+        // Obtener la partida y buscar el jugador que tenga este userId
+        var partidaResp = partidaService.obtenerPartida(codigo);
+        if (partidaResp == null || partidaResp.getJugadores() == null) {
+            throw new IllegalArgumentException("Partida no encontrada o sin jugadores: " + codigo);
+        }
+
+        String resolvedJugadorId = null;
+        for (com.juegocartas.juegocartas.model.Jugador j : partidaResp.getJugadores()) {
+            if (userId.equals(j.getUserId())) {
+                resolvedJugadorId = j.getId();
+                break;
+            }
+        }
+
+        if (resolvedJugadorId == null) {
+            throw new IllegalArgumentException("Usuario no es jugador en la partida: " + codigo);
+        }
+
+        return ResponseEntity.ok(partidaService.reorderMano(codigo, resolvedJugadorId, request));
+    }
 }

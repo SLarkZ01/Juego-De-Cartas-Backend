@@ -151,6 +151,43 @@ public class GameServiceImpl implements GameService {
         Optional<Partida> opt = partidaRepository.findByCodigo(codigoPartida);
         if (opt.isEmpty()) throw new IllegalArgumentException("Partida no encontrada");
         Partida p = opt.get();
+        // validar orden de jugada: el jugador que debe jugar es el siguiente en la secuencia
+        // Secuencia: empezar por turnoActual y seguir por orden (ignorando jugadores sin cartas)
+
+        List<Jugador> jugadoresActivosList = p.getJugadores().stream()
+                .filter(j -> j.getNumeroCartas() > 0)
+                .sorted((a, b) -> Integer.compare(a.getOrden(), b.getOrden()))
+                .toList();
+
+        if (jugadoresActivosList.isEmpty()) throw new IllegalStateException("No hay jugadores activos en la partida");
+
+        // Reordenar para que el primer elemento sea el jugador con turnoActual
+        int startIndex = 0;
+        for (int i = 0; i < jugadoresActivosList.size(); i++) {
+            if (jugadoresActivosList.get(i).getId().equals(p.getTurnoActual())) { startIndex = i; break; }
+        }
+        List<Jugador> ordered = new java.util.ArrayList<>();
+        for (int i = 0; i < jugadoresActivosList.size(); i++) {
+            ordered.add(jugadoresActivosList.get((startIndex + i) % jugadoresActivosList.size()));
+        }
+
+        int alreadyPlayed = p.getCartasEnMesa() != null ? p.getCartasEnMesa().size() : 0;
+        if (alreadyPlayed < 0) alreadyPlayed = 0;
+
+        if (alreadyPlayed >= ordered.size()) {
+            // debería haberse resuelto ya la ronda, pero prevenir índice fuera de rango
+            throw new IllegalStateException("Ronda en estado inválido: todos los jugadores ya jugaron");
+        }
+
+        String expectedPlayerId = ordered.get(alreadyPlayed).getId();
+        if (!expectedPlayerId.equals(jugadorId)) {
+            throw new IllegalStateException("No es su turno para jugar. El siguiente jugador debe ser: " + ordered.get(alreadyPlayed).getNombre());
+        }
+
+        // Si es la primera jugada de la ronda, el atributo debe estar seleccionado previamente por el jugador del turno
+        if (alreadyPlayed == 0 && p.getAtributoSeleccionado() == null) {
+            throw new IllegalStateException("Atributo no seleccionado. El jugador con turno debe elegir un atributo antes de jugar.");
+        }
 
         // buscar jugador y su carta actual
         Jugador jugador = p.getJugadores().stream().filter(j -> j.getId().equals(jugadorId)).findFirst().orElseThrow();

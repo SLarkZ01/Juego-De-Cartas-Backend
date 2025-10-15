@@ -1,55 +1,50 @@
-# Contexto del Juego: CARD MATCH BATTLE
+CARD MATCH BATTLE
 
-## Descripción del Juego
-CARD MATCH BATTLE es un juego de cartas multijugador basado en comparación de atributos. Los jugadores compiten para acumular la mayor cantidad de cartas mediante la comparación estratégica de características.
+Card Match Battle es un juego de cartas comparativas en el que los jugadores ponen a prueba su estrategia y conocimiento para acumular la mayor cantidad de cartas. El juego se desarrolla con diferentes temáticas (por ejemplo: animales, planetas, inventos, personajes históricos, pokemon, personajes de anime, entre otros) y cada carta incluye una imagen y una serie de características o atributos que podrán compararse durante las rondas de juego.
 
-## Elementos Principales
+La idea es ganar la partida acumulando el mayor número de cartas, comparando los valores de las diferentes características de los modelos representados en las cartas.
 
-### Cartas
-- **Total:** 32 cartas organizadas en 4 paquetes de 8 cartas cada uno
-- **Identificación:** Cada carta tiene un código numérico + letra (1A, 1B, 1C, 1D, 2A, 2B, etc.)
-- **Contenido:** Cada carta incluye:
-  - Una imagen del elemento representado
-  - Múltiples atributos numéricos (ej: fuerza, velocidad, tamaño, poder, rareza)
-- **Temáticas:** Animales, planetas, inventos, personajes históricos, pokémon, personajes de anime, etc.
+Descripción General
 
-### Jugadores
-- **Mínimo:** 2 jugadores
-- **Máximo:** 7 jugadores
-- Con 7 jugadores, la partida inicia automáticamente
+El juego se desarrolla con 4 paquetes de 8 cartas cada uno, para un total de 32 cartas. En la partida pueden participar al menos 2 jugadores, y hasta un máximo de 7. Cada carta pertenece a una categoría o colección temática y muestra sus características o atributos (por ejemplo: fuerza, velocidad, tamaño, poder, rareza, etc.).
 
-## Mecánica del Juego
+Cada carta está marcada con un número seguido de una letra (de la A a la H), conformando grupos o cuartetos. Ejemplo: 1A, 1B, 1C, 1D, 2A, etc.
 
-### 1. Configuración Inicial
-- Un jugador crea la partida y genera un código único
-- Los demás jugadores se unen usando ese código
-- El sistema reparte todas las cartas equitativamente (las sobrantes se asignan aleatoriamente)
-- Cada jugador solo ve su carta superior
+Reglas del Juego
 
-### 2. Orden de Juego
-El primer turno lo tiene quien posea:
-- La carta 1A (prioridad máxima)
-- Si no está presente: 1B, 1C, 1D, 2A... (en ese orden)
-- Si ninguna carta del cuarteto 1 está presente: el primer jugador conectado
+1. Creación de la Partida
 
-### 3. Desarrollo de Cada Ronda
-1. El jugador en turno elige un atributo de su carta (ej: "velocidad")
-2. Ese jugador coloca su carta visible para todos
-3. Los demás jugadores, en orden, revelan su carta superior
-4. Se comparan los valores del atributo elegido
+Un jugador crea una nueva partida. El sistema genera un código único que los demás jugadores utilizarán para unirse.
+El juego puede iniciar con al menos 2 jugadores conectados. Si se conectan 7 jugadores, la partida se iniciará automáticamente al ingresar el último.
 
-### 4. Resolución
-- **Ganador:** El jugador con el valor más alto en el atributo seleccionado
-- **Premio:** El ganador recoge TODAS las cartas jugadas y las pone al final de su pila
-- **Empate:** Las cartas quedan en la mesa; el ganador de la próxima ronda se lleva todas las acumuladas
-- **Siguiente turno:** El ganador de la ronda elige el atributo para la próxima
+2. Reparto de Cartas
 
-## Condiciones de Victoria
+El sistema reparte todas las cartas posibles entre los jugadores. Si sobran cartas, se asignan aleatoriamente.
+Cada jugador recibe una pila de cartas y solo podrá ver la carta superior, que será la carta en juego.
 
-El juego termina cuando:
-1. **Victoria absoluta:** Un jugador reúne las 32 cartas
-2. **Límite de tiempo:** Después de 30 minutos, gana quien tenga más cartas
-3. **Empate:** Si hay igual cantidad de cartas al terminar el tiempo
+3. Inicio del Juego
 
-## Objetivo Estratégico
-Conocer las fortalezas de tus cartas y elegir los atributos correctos en el momento oportuno para maximizar tus posibilidades de ganar cada ronda y acumular cartas.
+Comienza el jugador que tenga la carta marcada como 1A. Si esa carta no está en juego, sigue el orden 1B, 1C, 1D, 2A y así sucesivamente.
+Si ninguna de esas cartas está presente, inicia el primer jugador en el orden en que se conectaron al sistema.
+
+Desarrollo de una Ronda
+
+1. El jugador que tiene el turno elige una característica o atributo de su carta (por ejemplo: fuerza, velocidad, tamaño, poder, rareza, etc.).
+2. Ese jugador coloca su carta en la zona de juego visible para todos los demás.
+3. Los demás jugadores, en orden, colocan su carta superior en la mesa.
+4. El sistema compara los valores de la característica seleccionada entre todas las cartas jugadas.
+
+Resolución de la Ronda
+
+- Gana la ronda el jugador cuya carta tenga el valor más alto en la característica elegida.
+El ganador recoge todas las cartas jugadas y las coloca al final de su pila.
+- En caso de empate, las cartas permanecen sobre la mesa y se juega una nueva ronda.
+Quien gane la siguiente ronda se lleva también las cartas acumuladas del empate.
+- El ganador de la ronda anterior será quien elija la característica para la siguiente ronda.
+
+Final del Juego
+
+El juego termina cuando ocurre alguna de las siguientes condiciones:
+1. Un jugador reúne todas las cartas. En ese caso, se declara ganador absoluto.
+2. Pasa media hora de juego. Gana el jugador con mayor cantidad de cartas.
+3. Si hay empate en el número de cartas, se declara empate general.

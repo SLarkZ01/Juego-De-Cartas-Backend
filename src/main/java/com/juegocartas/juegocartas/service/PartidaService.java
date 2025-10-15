@@ -46,4 +46,10 @@ public interface PartidaService {
      * Variante que permite especificar el jugadorId para expulsar/retirar a ese jugador.
      */
     PartidaResponse salirPartidaPorJugadorId(String codigo, String jugadorId);
+
+    /**
+     * Permite a un jugador persistir el nuevo orden de su mano.
+     * Se validará que la colección de cartas coincida con la existente (no se admiten duplicados ni pérdidas).
+     */
+    PartidaResponse reorderMano(String codigo, String jugadorId, com.juegocartas.juegocartas.dto.request.ReorderHandRequest request);
 }
