@@ -121,10 +121,15 @@ public class PartidaWebSocketController {
 
             // Si el evento es un drop en la mesa (target == "mesa" y dragging == false)
             // interpretarlo como intención de jugar la carta: invocar gameService.jugarCarta
-            try {
+                    try {
                 if (event.getTarget() != null && "mesa".equalsIgnoreCase(event.getTarget()) && !event.isDragging()) {
-                    // Llamada al servicio de juego; el servicio validará orden, atributo y existencia de cartas
-                    gameService.jugarCarta(partidaCodigo, jugadorId);
+                    // Llamada al servicio de juego; si el cliente provee cardIndex, úsalo para jugar la carta específica
+                    Integer cardIndex = event.getCardIndex();
+                    if (cardIndex != null) {
+                        gameService.jugarCarta(partidaCodigo, jugadorId, cardIndex);
+                    } else {
+                        gameService.jugarCarta(partidaCodigo, jugadorId);
+                    }
                 }
             } catch (Exception e) {
                 // Enviar al jugador un mensaje dirigido con el error para que el cliente pueda mostrar feedback

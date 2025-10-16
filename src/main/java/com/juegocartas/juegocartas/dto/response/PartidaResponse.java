@@ -9,6 +9,7 @@ public class PartidaResponse {
     private String jugadorId;
     private List<Jugador> jugadores;
     private boolean eliminada = false;
+    private String tipo; // tipo de evento para que el frontend lo identifique
 
     public PartidaResponse() {}
 
@@ -16,6 +17,7 @@ public class PartidaResponse {
         this.codigo = codigo;
         this.jugadorId = jugadorId;
         this.jugadores = jugadores;
+        this.tipo = "PARTIDA_STATE";
     }
 
     public PartidaResponse(String codigo, String jugadorId, List<Jugador> jugadores, boolean eliminada) {
@@ -23,7 +25,11 @@ public class PartidaResponse {
         this.jugadorId = jugadorId;
         this.jugadores = jugadores;
         this.eliminada = eliminada;
+        this.tipo = "PARTIDA_STATE";
     }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
 
     public String getCodigo() {
         return codigo;

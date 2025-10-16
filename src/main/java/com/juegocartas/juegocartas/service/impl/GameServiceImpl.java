@@ -140,14 +140,22 @@ public class GameServiceImpl implements GameService {
         // Sincronizar por código de partida para evitar condiciones de carrera
         Object lock = getLockForPartida(codigoPartida);
         synchronized (lock) {
-            jugarCartaInterno(codigoPartida, jugadorId);
+            jugarCartaInterno(codigoPartida, jugadorId, null);
+        }
+    }
+
+    @Override
+    public void jugarCarta(String codigoPartida, String jugadorId, Integer cardIndex) {
+        Object lock = getLockForPartida(codigoPartida);
+        synchronized (lock) {
+            jugarCartaInterno(codigoPartida, jugadorId, cardIndex);
         }
     }
     
     /**
      * Método interno para jugar carta (ya sincronizado).
      */
-    private void jugarCartaInterno(String codigoPartida, String jugadorId) {
+    private void jugarCartaInterno(String codigoPartida, String jugadorId, Integer cardIndex) {
         Optional<Partida> opt = partidaRepository.findByCodigo(codigoPartida);
         if (opt.isEmpty()) throw new IllegalArgumentException("Partida no encontrada");
         Partida p = opt.get();
@@ -189,11 +197,20 @@ public class GameServiceImpl implements GameService {
             throw new IllegalStateException("Atributo no seleccionado. El jugador con turno debe elegir un atributo antes de jugar.");
         }
 
-        // buscar jugador y su carta actual
+        // buscar jugador y su carta
         Jugador jugador = p.getJugadores().stream().filter(j -> j.getId().equals(jugadorId)).findFirst().orElseThrow();
         if (jugador.getCartasEnMano().isEmpty()) throw new IllegalStateException("Jugador sin cartas");
 
-        String cartaCodigo = jugador.getCartasEnMano().remove(0);
+        String cartaCodigo;
+        if (cardIndex != null) {
+            int idx = cardIndex.intValue();
+            if (idx < 0 || idx >= jugador.getCartasEnMano().size()) {
+                throw new IllegalStateException("Índice de carta inválido");
+            }
+            cartaCodigo = jugador.getCartasEnMano().remove(idx);
+        } else {
+            cartaCodigo = jugador.getCartasEnMano().remove(0);
+        }
         jugador.setNumeroCartas(jugador.getCartasEnMano().size());
         jugador.setCartaActual(jugador.getNumeroCartas() > 0 ? jugador.getCartasEnMano().get(0) : null);
 
@@ -229,6 +246,53 @@ public class GameServiceImpl implements GameService {
 
         // Publicar conteo actualizado de cartas (el jugador actual redujo su cantidad)
         publishCardCounts(p);
+
+        // Publicar también el estado completo de la partida para que la UI (panel de jugadores)
+        // reciba la información actualizada (turnoActual, numeroCartas, conectados, etc.)
+        try {
+            eventPublisher.publish("/topic/partida/" + p.getCodigo(),
+                new com.juegocartas.juegocartas.dto.response.PartidaResponse(p.getCodigo(), null, p.getJugadores())
+            );
+        } catch (Exception e) {
+            log.warn("No se pudo publicar PartidaResponse tras jugarCarta: {}", e.getMessage());
+        }
+
+        // Publicar evento explícito que indica quién debe jugar a continuación (expected player)
+        try {
+            // Recalcular jugadores activos y orden después de quitar la carta
+            List<Jugador> jugadoresActivosAfter = p.getJugadores().stream()
+                    .filter(j -> j.getNumeroCartas() > 0)
+                    .sorted((a, b) -> Integer.compare(a.getOrden(), b.getOrden()))
+                    .toList();
+
+            if (!jugadoresActivosAfter.isEmpty()) {
+                // Reordenar para que el primer elemento sea el jugador con turnoActual (si está presente)
+                int startIdxAfter = 0;
+                for (int i = 0; i < jugadoresActivosAfter.size(); i++) {
+                    if (jugadoresActivosAfter.get(i).getId().equals(p.getTurnoActual())) { startIdxAfter = i; break; }
+                }
+                List<Jugador> orderedAfter = new java.util.ArrayList<>();
+                for (int i = 0; i < jugadoresActivosAfter.size(); i++) {
+                    orderedAfter.add(jugadoresActivosAfter.get((startIdxAfter + i) % jugadoresActivosAfter.size()));
+                }
+
+                int newAlreadyPlayed = p.getCartasEnMesa() != null ? p.getCartasEnMesa().size() : 0;
+                int activosCountAfter = jugadoresActivosAfter.size();
+
+                // Si la ronda no quedó completa, publicar el siguiente jugador esperado
+                if (newAlreadyPlayed < activosCountAfter) {
+                    int expectedIndex = newAlreadyPlayed % activosCountAfter;
+                    String expectedId = orderedAfter.get(expectedIndex).getId();
+                    String expectedNombre = orderedAfter.get(expectedIndex).getNombre();
+                    com.juegocartas.juegocartas.dto.event.TurnoCambiadoEvent turnoEvt =
+                        new com.juegocartas.juegocartas.dto.event.TurnoCambiadoEvent(expectedId, expectedNombre, newAlreadyPlayed);
+                    eventPublisher.publish("/topic/partida/" + p.getCodigo(), turnoEvt);
+                    log.info("Partida {}: TurnoCambiadoEvent published expected={} alreadyPlayed={}", p.getCodigo(), expectedId, newAlreadyPlayed);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo publicar TurnoCambiadoEvent tras jugarCarta: {}", e.getMessage());
+        }
 
         // si todos los jugadores con cartas jugaron, resolver ronda
         long jugadoresActivos = p.getJugadores().stream().filter(j -> j.getNumeroCartas() > 0).count();
