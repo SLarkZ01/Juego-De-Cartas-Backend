@@ -1,35 +1,29 @@
 package com.juegocartas.juegocartas.dto.event;
 
 /**
- * Evento que indica cuál es el jugador esperado para la siguiente jugada dentro de la ronda.
- * No altera la semántica de turnoActual (que sigue representando el starter de la ronda).
+ * Evento que indica qué jugador debe jugar a continuación dentro de la ronda.
  */
-public class TurnoCambiadoEvent {
-    private String expectedPlayerId;
-    private String expectedPlayerNombre;
-    private int alreadyPlayed; // cuántas cartas ya se jugaron en la ronda (útil para UI)
-    private String tipo; // tipo de evento para que el frontend pueda identificarlo
-
-    public TurnoCambiadoEvent() {
-        this.tipo = "TURNO_CAMBIADO";
-    }
+public class TurnoCambiadoEvent extends BaseGameEvent {
+    private final String expectedPlayerId;
+    private final String expectedPlayerNombre;
+    private final int alreadyPlayed;
 
     public TurnoCambiadoEvent(String expectedPlayerId, String expectedPlayerNombre, int alreadyPlayed) {
+        super("TURNO_CAMBIADO");
         this.expectedPlayerId = expectedPlayerId;
         this.expectedPlayerNombre = expectedPlayerNombre;
         this.alreadyPlayed = alreadyPlayed;
-        this.tipo = "TURNO_CAMBIADO";
     }
 
-    public String getExpectedPlayerId() { return expectedPlayerId; }
-    public void setExpectedPlayerId(String expectedPlayerId) { this.expectedPlayerId = expectedPlayerId; }
+    public String getExpectedPlayerId() {
+        return expectedPlayerId;
+    }
 
-    public String getExpectedPlayerNombre() { return expectedPlayerNombre; }
-    public void setExpectedPlayerNombre(String expectedPlayerNombre) { this.expectedPlayerNombre = expectedPlayerNombre; }
+    public String getExpectedPlayerNombre() {
+        return expectedPlayerNombre;
+    }
 
-    public int getAlreadyPlayed() { return alreadyPlayed; }
-    public void setAlreadyPlayed(int alreadyPlayed) { this.alreadyPlayed = alreadyPlayed; }
-
-    public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
+    public int getAlreadyPlayed() {
+        return alreadyPlayed;
+    }
 }
